@@ -6,7 +6,7 @@ JavaScript Library to show Couchbase Topology deployments, services and buckets
 Server Group Topology Sample:
 
 ```
-{
+let data = {
             name: "cb-demo",
             version: "6.6.3",
             resources: {
@@ -129,5 +129,7 @@ Server Group Topology Sample:
                 { name: "mybucket2", quota: 5590, documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic"]},
                 { name: "mybucket3", quota: 5590, documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic"]}],
             status: "HEALTHY"
-        }
+        };
+    let content = document.getElementById("display");
+    create_cluster(content, data);
 ```

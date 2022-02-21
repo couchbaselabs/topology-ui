@@ -1,6 +1,5 @@
 # topology-ui
-JavaScript Library to show Couchbase Topology deployments, services and buckets
-
+JavaScript Library to display Couchbase Cluster Topology, Services and Buckets details
 ![overview](./assets/cluster-sg-sample.png)
 
 Server Group Topology Sample:

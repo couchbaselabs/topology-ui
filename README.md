@@ -36,8 +36,7 @@ The editor can be used as a component in your own web application. The library c
     <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css" rel="stylesheet">
     <script src="js/couchbase-info.js"></script>
-    <link href="css/jsoneditor.min.css" rel="stylesheet" type="text/css">
-    <script src="js/jsoneditor.min.js"></script>
+    ...
 </head>
 <body>
 <div class="container">
@@ -47,11 +46,7 @@ The editor can be used as a component in your own web application. The library c
                 <!-- cluster topology display would be here -->
             </div>
         </div>
-        <div class="row justify-content-center">
-            <form>
-                <div id="jsoneditor" class="mx-5 w-90"></div>
-            </form>
-        </div>
+          ....
     </main>
 </div>
 <script>

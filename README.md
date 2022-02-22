@@ -20,6 +20,51 @@ Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluste
 </head>
 ```
 
+**[Optional]JsonEditor** is a web-based tool to view, edit, format, and validate JSON. It has various modes such as a tree editor, a code editor, and a plain text editor.
+
+The editor can be used as a component in your own web application. The library can be loaded as CommonJS module, AMD module, or as a regular javascript file.
+
+* [https://github.com/josdejong/jsoneditor](https://github.com/josdejong/jsoneditor)
+
+
+### Topology Viewer
+
+```
+<head>
+    <meta charset="UTF-8">
+    <title>Couchbase Info CSS</title>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css" rel="stylesheet">
+    <script src="js/couchbase-info.js"></script>
+    <link href="css/jsoneditor.min.css" rel="stylesheet" type="text/css">
+    <script src="js/jsoneditor.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <main class="container-fluid">
+        <div class="row justify-content-center">
+            <div id="display" class="flex justify-content-center">
+                <!-- cluster topology display would be here -->
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <form>
+                <div id="jsoneditor" class="mx-5 w-90"></div>
+            </form>
+        </div>
+    </main>
+</div>
+<script>
+    var data =
+        {
+				... topology data here ...
+        }
+    let content = document.getElementById("display");
+    create_cluster(content, data);
+</script>
+</body>
+```
+
 
 ## Topologies Samples:
 

@@ -22,7 +22,7 @@ function saveToImage() {
     function getClusterInfo() {
         return data;
     }
-    
+
 async function load_cluster() {
     console.log("loading svg...");
 
@@ -237,13 +237,19 @@ function create_buckets_table_body_row(bucket) {
     "                                            </div>\n" +
     "                                        </td>\n" +
     "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-    "                                            <div class=\"text-xs text-gray-900\">\n" +
-    "                                                <span class=\"px-2 py-1 text-xs text-white font-bold bg-yellow-500 rounded-xl shadow-400\">"+bucket.ratio+" %</span>\n" +
+    "                                            <div class=\"text-xs text-gray-900\">\n" + (bucket.ratio ?
+    "                                                <span class=\"px-2 py-1 text-xs text-white font-bold bg-yellow-500 rounded-xl shadow-400\">"+bucket.ratio+" %</span>\n":
+    "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+    "                                                --\n" +
+    "                                            </div>\n") +
     "                                            </div>\n" +
     "                                        </td>\n" +
     "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-    "                                            <div class=\"text-xs text-gray-900\">\n" +
-    "                                                <span class=\"px-2 py-1 text-xs text-white font-bold bg-yellow-800 rounded-xl shadow-400\">"+bucket.replicas+"</span>\n" +
+    "                                            <div class=\"text-xs text-gray-900\">\n"+ (bucket.replicas ?
+    "                                                <span class=\"px-2 py-1 text-xs text-white font-bold bg-yellow-800 rounded-xl shadow-400\">"+bucket.replicas+"</span>\n":
+    "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+    "                                                --\n" +
+    "                                            </div>\n") +
     "                                            </div>\n" +
     "                                        </td>\n" +
     "                                        <td class=\"px-2 py-2\">\n" +
@@ -268,6 +274,20 @@ function create_buckets_table_body(buckets) {
     "                                    </tbody>\n";
 }
 
+function create_buckets_table_total(buckets) {
+    var body = "<thead class=\"border-t border-yellow-400\">"
+    let bucket = buckets.reduce((b1, b2) => {
+        return {
+            "name": "Total",
+            "quota": b1.quota + b2.quota,
+            "documents": b1.documents + b2.documents
+        }
+    });
+    body += create_buckets_table_body_row(bucket);
+    body += "</thead>"
+    return body;
+}
+
 function create_buckets(buckets) {
     return "  <div id=\"buckets\" class=\"mt-1\" >\n" +
         "                    <div class=\"flex flex-col\">\n" +
@@ -276,6 +296,7 @@ function create_buckets(buckets) {
         "                                <table>\n" +
         create_bucket_header_table() +
         create_buckets_table_body(buckets) +
+        create_buckets_table_total(buckets) +
         "                                </table>\n" +
         "                            </div>\n" +
         "                        </div>\n" +

@@ -204,9 +204,30 @@
                     status: "HEALTHY"
                 }
             ],
-            buckets: [{ name: "mybucket", quota: 5590, documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic"]},
-                { name: "mybucket2", quota: 5590, documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic"]},
-                { name: "mybucket3", quota: 5590, documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic"]}],
+            buckets: [{
+                name: "mybucket",
+                quota: 5590,
+                documents: 39000000,
+                ratio: 49,
+                "replicas": 1,
+                "connectors": ["mobile", "kafka", "elastic"]
+            },
+                {
+                    name: "mybucket2",
+                    quota: 5590,
+                    documents: 39000000,
+                    ratio: 49,
+                    "replicas": 1,
+                    "connectors": ["mobile", "kafka", "elastic"]
+                },
+                {
+                    name: "mybucket3",
+                    quota: 5590,
+                    documents: 39000000,
+                    ratio: 49,
+                    "replicas": 1,
+                    "connectors": ["mobile", "kafka", "elastic"]
+                }],
             status: "HEALTHY"
         }
     let content = document.getElementById("display");

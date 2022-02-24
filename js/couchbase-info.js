@@ -20,6 +20,7 @@ function getClusterInfo() {
     return data;
 }
 
+
 async function load_cluster() {
     console.log("loading svg...");
 
@@ -174,73 +175,127 @@ function create_server_resources(resources) {
 
 function create_bucket_header_table() {
     return "                                    <thead class=\"border-b-2 border-yellow-400\">\n" +
-        "                                    <tr>\n" +
-        "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            Buckets\n" +
-        "                                        </th>\n" +
-        "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            Quota\n" +
-        "                                        </th>\n" +
-        "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            #docs\n" +
-        "                                        </th>\n" +
-        "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            %Resident\n" +
-        "                                        </th>\n" +
-        "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            Connectors\n" +
-        "                                        </th>\n" +
-        "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            TTL\n" +
-        "                                        </th>\n" +
-        "                                    </tr>\n" +
-        "                                    </thead>\n";
+    "                                    <tr>\n" +
+    "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            Buckets\n" +
+    "                                        </th>\n" +
+    "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            Quota\n" +
+    "                                        </th>\n" +
+    "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            #docs\n" +
+    "                                        </th>\n" +
+    "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            %Resident\n" +
+    "                                        </th>\n" +
+    "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            Replicas\n" +
+    "                                        </th>\n" +
+    "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            Connectors\n" +
+    "                                        </th>\n" +
+    "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            TTL\n" +
+    "                                        </th>\n" +
+    "                                    </tr>\n" +
+    "                                    </thead>\n";
 }
 
-function format_mb(mb) {
-    let gb = Math.round(mb / 1024);
-    if (gb > 1) {
-        return gb + " GB";
-    }
-    return mb + " MB";
+function format_mb(mbytes,  decimals) {
+    return format_number(mbytes, 1024, ['MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'], decimals)
 }
 
-function format_docs(docs) {
-    return (docs / 1000000) + "M";
+function format_docs(docs, decimals) {
+    return format_number(docs, 1000, ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'], decimals)
+}
+
+function format_number(size, base, sizes, decimals = 2) {
+    if (size === 0)
+        return '0 ' + sizes[0];
+
+    const dm = decimals < 0 ? 0 : decimals;
+    const i = Math.floor(Math.log(size) / Math.log(base));
+
+    return parseFloat((size / Math.pow(base, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 function create_buckets_table_body_row(bucket) {
-    let bucketColor = bucket.type === "ephemeral" ? "bg-orange-400" : "bg-blue-400";
+    var cfg = {};
+    switch (bucket.type) {
+        case 'couchbase':
+            cfg =  {
+                icon: "fas fa-database",
+                colors: ["bg-blue-400","bg-gray-400","bg-yellow-300","bg-yellow-500","bg-yellow-800"]
+            };
+            break;
+        case 'ephemeral':
+            cfg = {
+                icon: "fas fa-database",
+                colors: ["bg-yellow-500","bg-gray-400","bg-yellow-300","bg-yellow-500","bg-yellow-800"]
+            };
+            break;
+        case 'magma':
+            cfg = {
+                icon: "fas fa-database",
+                colors: ["bg-green-500","bg-gray-400","bg-yellow-300","bg-yellow-500","bg-yellow-800"]
+            };
+            break;
+        case 'total':
+            cfg = {
+                icon: "fa-solid fa-sigma",
+                colors: ["bg-gray-800","bg-gray-800","bg-gray-800","bg-gray-800","bg-gray-800"]
+            };
+            break;
+        default:
+            cfg = {
+                icon: "fas fa-database",
+                colors: ["bg-blue-400","bg-gray-400","bg-yellow-300","bg-yellow-500","bg-yellow-800"]
+            };
+            break;
+    }
+
+
     return "                                    <tr class=\"whitespace-nowrap\">\n" +
-        "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            <div class=\"flex flex-row px-6 py-1 text-xs text-white font-bold "+bucketColor+" rounded-xl shadow-400 w-full\"><i class=\"fas fa-database\"><span class='px-2'>" + bucket.name + "</span></i></div>\n" +
-        "                                        </td>\n" +
-        "                                        <td class=\"px-2 py-2\">\n" +
-        "                                            <div class=\"text-xs text-gray-900\">\n" +
-        "                                                <span class=\"px-2 py-1 text-xs text-white font-bold bg-gray-400 rounded-xl shadow-400\">" + format_mb(bucket.quota) + "</span>\n" +
-        "                                            </div>\n" +
-        "                                        </td>\n" +
-        "                                        <td class=\"px-2 py-2\">\n" +
-        "                                            <div class=\"text-xs text-gray-900\">\n" +
-        "                                                <span class=\"px-2 py-1 text-xs text-white font-bold bg-yellow-300 rounded-xl shadow-400\">" + format_docs(bucket.documents) + "</span>\n" +
-        "                                            </div>\n" +
-        "                                        </td>\n" +
-        "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            <div class=\"text-xs text-gray-900\">\n" +
-        "                                                <span class=\"px-2 py-1 text-xs text-white font-bold bg-yellow-500 rounded-xl shadow-400\">" + bucket.ratio + " %</span>\n" +
-        "                                            </div>\n" +
-        "                                        </td>\n" +
-        "                                        <td class=\"px-2 py-2\">\n" +
-        "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
-        "                                                --\n" +
-        "                                            </div>\n" +
-        "                                        </td>\n" +
-        "                                        <td class=\"px-2 py-2\">\n" +
-        "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
-        "                                                --\n" +
-        "                                            </div>\n" +
-        "                                        </td>\n" +
-        "                                    </tr>\n";
+    "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            <div class=\"flex flex-row px-6 py-1 text-xs text-white font-bold "+cfg.colors[0]+" rounded-xl shadow-400 w-full\"><i class=\""+cfg.icon+"\"><span class='px-2'>"+bucket.name+"</span></i></div>\n" +
+    "                                        </td>\n" +
+    "                                        <td class=\"px-2 py-2\">\n" +
+    "                                            <div class=\"text-xs text-gray-900\">\n" +
+    "                                                <span class=\"px-2 py-1 text-xs text-white font-bold "+cfg.colors[1]+" rounded-xl shadow-400\">"+format_mb(bucket.quota)+"</span>\n" +
+    "                                            </div>\n" +
+    "                                        </td>\n" +
+    "                                        <td class=\"px-2 py-2\">\n" +
+    "                                            <div class=\"text-xs text-gray-900\">\n" +
+    "                                                <span class=\"px-2 py-1 text-xs text-white font-bold "+cfg.colors[2]+" rounded-xl shadow-400\">"+format_docs(bucket.documents)+"</span>\n" +
+    "                                            </div>\n" +
+    "                                        </td>\n" +
+    "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            <div class=\"text-xs text-gray-900\">\n" + (bucket.ratio ?
+    "                                                <span class=\"px-2 py-1 text-xs text-white font-bold "+cfg.colors[3]+" rounded-xl shadow-400\">"+bucket.ratio+" %</span>\n":
+    "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+    "                                                --\n" +
+    "                                            </div>\n") +
+    "                                            </div>\n" +
+    "                                        </td>\n" +
+    "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            <div class=\"text-xs text-gray-900\">\n"+ (bucket.replicas ?
+    "                                                <span class=\"px-2 py-1 text-xs text-white font-bold "+cfg.colors[4]+" rounded-xl shadow-400\">"+bucket.replicas+"</span>\n":
+    "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+    "                                                --\n" +
+    "                                            </div>\n") +
+    "                                            </div>\n" +
+    "                                        </td>\n" +
+    "                                        <td class=\"px-2 py-2\">\n" +
+    "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+    "                                                --\n" +
+    "                                            </div>\n" +
+    "                                        </td>\n" +
+    "                                        <td class=\"px-2 py-2\">\n" +
+    "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+    "                                                --\n" +
+    "                                            </div>\n" +
+    "                                        </td>\n" +
+    "                                    </tr>\n";
 }
 
 function create_buckets_table_body(buckets) {
@@ -252,6 +307,21 @@ function create_buckets_table_body(buckets) {
         "                                    </tbody>\n";
 }
 
+function create_buckets_table_total(buckets) {
+    var body = "<thead class=\"border-t border-gray-200\">"
+    let bucket = buckets.reduce((b1, b2) => {
+        return {
+            name: "Total",
+            quota: b1.quota + b2.quota,
+            documents: b1.documents + b2.documents,
+            type: "total"
+        }
+    });
+    body += create_buckets_table_body_row(bucket);
+    body += "</thead>"
+    return body;
+}
+
 function create_buckets(buckets) {
     return "  <div id=\"buckets\" class=\"mt-1\" >\n" +
         "                    <div class=\"flex flex-col\">\n" +
@@ -260,6 +330,7 @@ function create_buckets(buckets) {
         "                                <table>\n" +
         create_bucket_header_table() +
         create_buckets_table_body(buckets) +
+        create_buckets_table_total(buckets) +
         "                                </table>\n" +
         "                            </div>\n" +
         "                        </div>\n" +

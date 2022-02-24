@@ -200,16 +200,22 @@ function create_bucket_header_table() {
     "                                    </thead>\n";
 }
 
-function format_mb(mb) {
-    let gb = Math.round(mb / 1024);
-    if( gb > 1) {
-        return gb+ " GB";
-    }
-    return mb+" MB";
+function format_mb(mbytes,  decimals) {
+    return format_number(mbytes, 1024, ['MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'], decimals)
 }
 
-function format_docs(docs) {
-    return (docs / 1000000) + "M";
+function format_docs(docs, decimals) {
+    return format_number(docs, 1000, ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'], decimals)
+}
+
+function format_number(size, base, sizes, decimals = 2) {
+    if (size === 0)
+        return '0 ' + sizes[0];
+
+    const dm = decimals < 0 ? 0 : decimals;
+    const i = Math.floor(Math.log(size) / Math.log(base));
+
+    return parseFloat((size / Math.pow(base, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 function create_buckets_table_body_row(bucket) {

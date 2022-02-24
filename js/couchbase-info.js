@@ -191,6 +191,9 @@ function create_bucket_header_table() {
     "                                            %Resident\n" +
     "                                        </th>\n" +
     "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            Replicas\n" +
+    "                                        </th>\n" +
+    "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
     "                                            Connectors\n" +
     "                                        </th>\n" +
     "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
@@ -236,6 +239,11 @@ function create_buckets_table_body_row(bucket) {
     "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
     "                                            <div class=\"text-xs text-gray-900\">\n" +
     "                                                <span class=\"px-2 py-1 text-xs text-white font-bold bg-yellow-500 rounded-xl shadow-400\">"+bucket.ratio+" %</span>\n" +
+    "                                            </div>\n" +
+    "                                        </td>\n" +
+    "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+    "                                            <div class=\"text-xs text-gray-900\">\n" +
+    "                                                <span class=\"px-2 py-1 text-xs text-white font-bold bg-yellow-800 rounded-xl shadow-400\">"+bucket.replicas+"</span>\n" +
     "                                            </div>\n" +
     "                                        </td>\n" +
     "                                        <td class=\"px-2 py-2\">\n" +

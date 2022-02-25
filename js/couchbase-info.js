@@ -1,42 +1,6 @@
 const defaultServerGroupColors = ["border-blue-400 bg-blue-50", "border-green-500 bg-green-50", "border-yellow-500 bg-yellow-50"]
 const defaultServerGroupDisplayColor = ["bg-blue-400", "bg-green-500", "bg-yellow-500"]
 
-
-function saveToImage() {
-    console.log("saving to image...");
-    let content = document.getElementById("display");
-    domtoimage.toPng(content).then(function (dataUrl) {
-        console.log("creating url...")
-        var img = new Image();
-        img.src = dataUrl;
-        document.body.appendChild(img);
-    })
-        .catch(function (error) {
-            console.error("oops, something went wrong!", error);
-        });
-}
-
-function getClusterInfo() {
-    return data;
-}
-
-
-async function load_cluster() {
-    console.log("loading svg...");
-
-    let content = document.getElementById("display");
-    /*
-    // TODO replace fixed values to dynamic input
-    let response = await fetch("/connect/simulator/info");
-    let data = await response.json();
-    */
-    let data = getClusterInfo()
-    console.log(data);
-    console.log(JSON.stringify(data, null, 2));
-
-    create_cluster(content, data);
-}
-
 function add_cluster_name(clusterName) {
     // set cluster name
     return "<div class=\"flex w-full -my-3 \">" +
@@ -338,13 +302,48 @@ function create_buckets(buckets) {
         "                </div>";
 }
 
+function create_mobile(data) {
+    return "<div class=\"flex flex-row justify-content-center font-bold font-bold text-red-700 text-center text-xs align-center bg-black items-center\">" +
+        "                            <div id=\"sg1Group\" class=\"my-2 flex flex-wrap  justify-content-center\">\n" +
+        "                                <div id=\"sg1instance\" class=\"flex-row max-w-100 py-2 my-0 space-y-0\">\n" +
+        "                                    <p class=\"flex-row text-xs text-gray-400 font-bold\">nodeip</p>\n" +
+        "                                    <svg id=\"svg-sgnode1\" y=\"10\" width=\"90\" height=\"50\">\n" +
+        "                                        <image x=\"10\" y=\"0\" width=\"70\" height=\"65\" preserveAspectRatio=\"none\" xlink:href=\"images/syncgateway.svg\" />\n" +
+        "                                        <div id=\"sg1Resources\" class=\"align-center top-0\">\n" +
+        "                                            <div class=\"-top-16 bg-gray-700 z-10 rounded-lg text-xs text-white font-bold mx-2 px-2 my-0 py-0\">\n" +
+        "                                                <p>128 GB</p>\n" +
+        "                                                <p>  8 CPUs</p>\n" +
+        "                                            </div>\n" +
+        "                                        </div>\n" +
+        "                                    </svg>\n" +
+
+        "                                    <div id=\"sg1\" class=\"flex-row\">\n" +
+        "                                        <p>SGW 1</p>\n" +
+        "                                    </div>\n" +
+        "                                </div>\n" +
+        "                            </div>\n" +
+        "</div>";
+}
+
+function create_apps(data) {
+    return "<div class=\"flex flex-row justify-content-center align-center\"></div>";
+}
+
 function create_cluster(content, data) {
-    let clusterDiv = "<div id=\"cluster-info\" class=\"m-5 flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
-        add_cluster_name(data.name) +
-        create_server_groups(data.serverGroups) +
-        create_server_resources(data.resources) +
-        create_cluster_version(data.version) +
-        "</div>" +
-        create_buckets(data.buckets);
+    let clusterDiv ="<div class=\"flex flex-col justify-content-center\">"+
+            "<div class=\"flex flex-row justify-content-center items-center\">"+
+              create_mobile(data)+
+              create_apps(data)+
+            "</div>"+
+            "<div class=\"flex flex-row\">"+
+                "<div id=\"cluster-info\" class=\"m-5 flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
+                    add_cluster_name(data.name) +
+                    create_server_groups(data.serverGroups) +
+                    create_server_resources(data.resources) +
+                    create_cluster_version(data.version) +
+                "</div>" +
+                create_buckets(data.buckets)+
+             "</div>" +
+        "</div>";
     content.innerHTML = clusterDiv;
 }

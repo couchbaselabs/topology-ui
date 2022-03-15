@@ -1,35 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Couchbase Info CSS</title>
-    <!-- font-awesome v5.15.4 -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"/>
-    <!-- tailwind v3.0.23 -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- jsoneditor v9.7.3 -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.css" rel="stylesheet" type="text/css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.js"></script>
-    <!-- topology-ui -->
-    <script src="js/couchbase-info.js"></script>
-</head>
-<body >
-<!-- <body> -->
-<div class="container">
-    <main class="container-fluid">
-        <div class="row justify-content-center">
-            <div id="display" class="flex justify-content-center">
-                <!-- cluster topology display would be here -->
-            </div>
-        </div>
-        <div class="row justify-content-center">
-            <form>
-                <div id="jsoneditor" class="mx-5 w-90"></div>
-            </form>
-        </div>
-    </main>
-</div>
-<script>
+# **mobile** - 2 Sync Gateways and 3 data,query,index nodes
+
+![Cluster Overview](../assets/2sgw_3nodes.png)
+
+```javascript
     let data =
         {
             name: "cb-demo",
@@ -65,7 +38,7 @@
                             services: [
                                 "Data",
                                 "Query",
-                                "Index"
+                                "Index" 
                             ],
                             status: "HEALTHY"
                         }
@@ -109,23 +82,4 @@
             applications: {},
             connectors: {}
         }
-    let content = document.getElementById("display");
-    create_cluster(content, data);
-</script>
-<script>
-        // create the editor
-        let content5 = document.getElementById("display");
-        const container = document.getElementById("jsoneditor")
-        const options = { mode: 'tree', name: "Cluster Topology",
-            onEvent: function(node, event) {
-                data = editor.get()
-                create_cluster(content5, data)
-            }
-        }
-        const editor = new JSONEditor(container, options)
-
-
-        editor.set(data)
-</script>
-</body>
-</html>
+```

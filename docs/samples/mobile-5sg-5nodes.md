@@ -1,35 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Couchbase Info CSS</title>
-    <!-- font-awesome v5.15.4 -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"/>
-    <!-- tailwind v3.0.23 -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- jsoneditor v9.7.3 -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.css" rel="stylesheet" type="text/css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.js"></script>
-    <!-- topology-ui -->
-    <script src="js/couchbase-info.js"></script>
-</head>
-<body >
-<!-- <body> -->
-<div class="container">
-    <main class="container-fluid">
-        <div class="row justify-content-center">
-            <div id="display" class="flex justify-content-center">
-                <!-- cluster topology display would be here -->
-            </div>
-        </div>
-        <div class="row justify-content-center">
-            <form>
-                <div id="jsoneditor" class="mx-5 w-90"></div>
-            </form>
-        </div>
-    </main>
-</div>
-<script>
+# mobile - 2 Sync Gateway Groups, 3 data and 2 query/index nodes
+
+![Cluster Overview](../assets/5sgw_3data_2queryIndex.png)
+
+```javascript
     let data =
         {
             name: "cb-demo",
@@ -45,25 +18,35 @@
                         {
                             name: "cb-demo0000",
                             services: [
-                                "Data",
-                                "Query",
-                                "Index"
+                                "Data"
                             ],
                             status: "HEALTHY"
                         },
                         {
                             name: "cb-demo0001",
                             services: [
-                                "Data",
-                                "Query",
-                                "Index"
+                                "Data"
                             ],
                             status: "HEALTHY"
                         },
                         {
                             name: "cb-demo0002",
                             services: [
-                                "Data",
+                                "Data"
+                            ],
+                            status: "HEALTHY"
+                        },
+                        {
+                            name: "cb-demo0003",
+                            services: [
+                                "Query",
+                                "Index"
+                            ],
+                            status: "HEALTHY"
+                        },
+                        {
+                            name: "cb-demo0004",
+                            services: [
                                 "Query",
                                 "Index"
                             ],
@@ -101,31 +84,41 @@
                                 cpus: 8
                             }
                         }]
-                }],
+                },
+                    {
+                        name:"Group2 - Import=false",
+                        instances: [
+                            {
+                                nodeIp: "10.0.0.11",
+                                name: "SG 3",
+                                resources: {
+                                    memory: 32,
+                                    cpus: 8
+                                }
+                            },
+                            {
+                                nodeIp: "10.0.0.12",
+                                name: "SG 4",
+                                resources: {
+                                    memory: 32,
+                                    cpus: 8
+                                }
+                            },
+                            {
+                                nodeIp: "10.0.0.13",
+                                name: "SG 5",
+                                resources: {
+                                    memory: 32,
+                                    cpus: 8
+                                }
+                            }]
+                    }],
                 databases: [{name: "mobileDatabase" },{name: "db2" }],
                 publicAddress: "https://mypublicdns.com",
-                clients: [{ name:"front-end App", versions: ["3.0"], os:["windows","ios","android"], language: "Java", total:50}]
+                clients: [{ name:"front-end App", versions: ["3.0"], os:["windows","ios","android"], language: "Java", roles:[""], total:50},{ name:"front-end App2", versions: ["3.0"], os:["windows","ios","android"], language: ".Net"}]
             },
             applications: {},
             connectors: {}
         }
-    let content = document.getElementById("display");
-    create_cluster(content, data);
-</script>
-<script>
-        // create the editor
-        let content5 = document.getElementById("display");
-        const container = document.getElementById("jsoneditor")
-        const options = { mode: 'tree', name: "Cluster Topology",
-            onEvent: function(node, event) {
-                data = editor.get()
-                create_cluster(content5, data)
-            }
-        }
-        const editor = new JSONEditor(container, options)
 
-
-        editor.set(data)
-</script>
-</body>
-</html>
+```

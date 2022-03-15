@@ -1,7 +1,33 @@
-const defaultSyncGatewayGroupColors = ["border-blue-400 ", "border-green-500 ", "border-yellow-500 "]
-const defaultSyncGatewayGroupDisplayColors = ["bg-blue-400 ", "bg-green-500 ", "bg-yellow-500 "]
-const defaultServerGroupColors = ["border-blue-400 bg-blue-50", "border-green-500 bg-green-50", "border-yellow-500 bg-yellow-50"]
-const defaultServerGroupDisplayColor = ["bg-blue-400", "bg-green-500", "bg-yellow-500"]
+const defaultTheme = {
+    mobile: {
+        groups: [{ border: "border-blue-400", color: "bg-blue-400"},
+            { border: "border-green-500", color: "bg-green-500"},
+            { border: "border-yellow-500", color: "bg-yellow-500"}],
+        databases: { icon: "fas fa-signal", color: "bg-orange-400"},
+        network: {
+            urlColor: "text-orange-400",
+            icon: "fas fa-network-wired",
+            color: "bg-blue-500",
+            textColor: "text-white",
+            displayText: "Load Balancer"
+        }
+    },
+    cluster: {
+        groups: [ { border: "border-blue-400 bg-blue-50", color: "bg-blue-400"},
+            { border: "border-green-500 bg-green-50", color: "bg-green-500"},
+            { border: "border-yellow-500 bg-yellow-50", color: "bg-yellow-500"}] ,
+        buckets: {
+            ephemeral: {color: "bg-orange-400", icon: "fas fa-database"},
+            couchbase: {color: "bg-blue-400", icon: "fas fa-database"},
+            magma: {color: "bg-green-500", icon: "fas fa-database"},
+            total: {color: "bg-gray-800", icon: "fas fa-plus-square"},
+            default: {color: "bg-blue-400", icon: "fas fa-database"}
+        }
+    }
+}
+
+
+
 
 function add_cluster_name(clusterName) {
     // set cluster name
@@ -81,12 +107,11 @@ function create_server_group_nodes(sgNodes) {
 }
 
 function create_server_group(sg, groupsVisible, position) {
-    let color = defaultServerGroupColors[position % defaultServerGroupColors.length]
-    let colorDisplay = defaultServerGroupDisplayColor[position % defaultServerGroupDisplayColor.length]
+    let cfg = defaultTheme.cluster.groups[position % defaultTheme.cluster.groups.length];
     // server group name
     if (sg && groupsVisible) {
-        return "<div class=\"rounded-xl border-2 " + color + " border-dashed\">" +
-            create_server_group_displayName(sg.name, groupsVisible, colorDisplay) +
+        return "<div class=\"rounded-xl border-2 " + cfg.border + " border-dashed\">" +
+            create_server_group_displayName(sg.name, groupsVisible, cfg.color) +
             create_server_group_nodes(sg.nodes) +
             "</div>";
     } else {
@@ -139,7 +164,7 @@ function create_server_resources(resources) {
 }
 
 function create_bucket_header_table() {
-    return "                                    <thead class=\"border-b-2 border-yellow-400\">\n" +
+    return "                                    <thead class=\"border-b-2 border-orange-400\">\n" +
         "                                    <tr>\n" +
         "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
         "                                            Buckets\n" +
@@ -184,78 +209,53 @@ function format_number(size, base, sizes, decimals = 2) {
     return parseFloat((size / Math.pow(base, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+function get_bucket_config(type) {
+    return defaultTheme.cluster.buckets[type]? defaultTheme.cluster.buckets[type] : defaultTheme.cluster.buckets.default;
+}
+
 function create_buckets_table_body_row(bucket) {
-    let cfg = {};
-    switch (bucket.type) {
-        case 'couchbase':
-            cfg = {
-                icon: "fas fa-database",
-                colors: ["bg-blue-400", "bg-gray-400", "bg-yellow-300", "bg-yellow-500", "bg-yellow-800"]
-            };
-            break;
-        case 'ephemeral':
-            cfg = {
-                icon: "fas fa-database",
-                colors: ["bg-yellow-500", "bg-gray-400", "bg-yellow-300", "bg-yellow-500", "bg-yellow-800"]
-            };
-            break;
-        case 'magma':
-            cfg = {
-                icon: "fas fa-database",
-                colors: ["bg-green-500", "bg-gray-400", "bg-yellow-300", "bg-yellow-500", "bg-yellow-800"]
-            };
-            break;
-        case 'total':
-            cfg = {
-                icon: "fas fa-plus-square",
-                colors: ["bg-gray-800", "bg-gray-800", "bg-gray-800", "bg-gray-800", "bg-gray-800"]
-            };
-            break;
-        default:
-            cfg = {
-                icon: "fas fa-database",
-                colors: ["bg-blue-400", "bg-gray-400", "bg-yellow-300", "bg-yellow-500", "bg-yellow-800"]
-            };
-            break;
-    }
+    let type = bucket.type ? bucket.type : "default";
+    let cfg = get_bucket_config(type);
+    let others = [bucket.type==="total"?"bg-gray-800":"bg-gray-400", bucket.type==="total"?"bg-gray-800":"bg-amber-400", "bg-orange-400", "bg-yellow-800"];
+    console.log("bucket config: ",type,JSON.stringify(cfg));
+    let replicas = bucket.replicas | "--";
 
     return "                                    <tr class=\"whitespace-nowrap\">\n" +
         "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            <div class=\"flex flex-row px-6 py-1 text-xs text-white font-bold " + cfg.colors[0] + " rounded-xl shadow-400 w-full\"><i class=\"" + cfg.icon + "\"><span class='px-2'>" + bucket.name + "</span></i></div>\n" +
+        "                                            <div class=\"flex flex-row px-6 py-1 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400 w-full\"><i class=\"" + cfg.icon + "\"><span class='px-2'>" + bucket.name + "</span></i></div>\n" +
         "                                        </td>\n" +
         "                                        <td class=\"px-2 py-2\">\n" +
         "                                            <div class=\"text-xs text-gray-900\">\n" +
-        "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + cfg.colors[1] + " rounded-xl shadow-400\">" + format_mb(bucket.quota) + "</span>\n" +
+        "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + others[0] + " rounded-xl shadow-400\">" + format_mb(bucket.quota) + "</span>\n" +
         "                                            </div>\n" +
         "                                        </td>\n" +
         "                                        <td class=\"px-2 py-2\">\n" +
         "                                            <div class=\"text-xs text-gray-900\">\n" +
-        "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + cfg.colors[2] + " rounded-xl shadow-400\">" + format_docs(bucket.documents) + "</span>\n" +
+        "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + others[1] + " rounded-xl shadow-400\">" + format_docs(bucket.documents) + "</span>\n" +
         "                                            </div>\n" +
         "                                        </td>\n" +
         "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
         "                                            <div class=\"text-xs text-gray-900\">\n" + (bucket.ratio ?
-            "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + cfg.colors[3] + " rounded-xl shadow-400\">" + bucket.ratio + " %</span>\n" :
-            "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+            "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + others[2] + " rounded-xl shadow-400\">" + bucket.ratio + " %</span>\n" :
+            "                                            <div class=\"text-xs text-gray-900 font-bold text-center\">\n" +
             "                                                --\n" +
             "                                            </div>\n") +
         "                                            </div>\n" +
         "                                        </td>\n" +
-        "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            <div class=\"text-xs text-gray-900\">\n" + (bucket.replicas ?
-            "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + cfg.colors[4] + " rounded-xl shadow-400\">" + bucket.replicas + "</span>\n" :
+        "                                        <td class=\"px-2 py-2 text-xs text-gray-500 text-center\">\n" +
+        "                                            <div class=\"text-xs text-gray-900\">\n" +
             "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
-            "                                                --\n" +
-            "                                            </div>\n") +
+                                                            replicas +
+            "                                            </div>\n" +
         "                                            </div>\n" +
         "                                        </td>\n" +
         "                                        <td class=\"px-2 py-2\">\n" +
-        "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+        "                                            <div class=\"text-xs text-gray-900 font-bold text-center\">\n" +
         "                                                --\n" +
         "                                            </div>\n" +
         "                                        </td>\n" +
         "                                        <td class=\"px-2 py-2\">\n" +
-        "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+        "                                            <div class=\"text-xs text-gray-900 font-bold text-center\">\n" +
         "                                                --\n" +
         "                                            </div>\n" +
         "                                        </td>\n" +
@@ -304,15 +304,14 @@ function create_buckets(buckets) {
 
 function create_sgwGroup(sgwGroupInstances, visibleGroups, position) {
     let sgws = "";
-    let color = defaultSyncGatewayGroupColors[position % defaultSyncGatewayGroupColors.length];
-    let displayColor = defaultSyncGatewayGroupDisplayColors[position % defaultSyncGatewayGroupDisplayColors.length];
+    let cfg = defaultTheme.mobile.groups[position % defaultTheme.mobile.groups.length];
     let sgName = sgwGroupInstances.name;
 
     sgwGroupInstances.instances.forEach(n => sgws += create_sgwInstance(n));
 
-    return visibleGroups ? "<div  class=\"my-2 border-2 " + color + "  border-dotted \">" +
+    return visibleGroups ? "<div  class=\"my-2 border-2 " + cfg.border + "  border-dotted \">" +
         "          <div class=\"-my-2 flex-row align-center\">" +
-        "             <span class=\"" + displayColor + " z-5 rounded-xl text-xs text-white font-bold mx-4 px-4 my-0 py-0\">" + sgName + "</span>" +
+        "             <span class=\"" + cfg.color + " z-5 rounded-xl text-xs text-white font-bold mx-4 px-4 my-0 py-0\">" + sgName + "</span>" +
         "          </div>" +
         "          <div class=\"flex flex-wrap \">" +
         sgws +
@@ -374,7 +373,7 @@ function create_sgwGroups(data) {
 
 
 function create_database_header_table() {
-    return "                               <thead class=\"border-b-2 border-yellow-400\">\n" +
+    return "                               <thead class=\"border-b-2 border-orange-400\">\n" +
         "                                    <tr>\n" +
         "                                        <th class=\"px-2 py-1 text-xs text-gray-500\">\n" +
         "                                            Databases\n" +
@@ -385,10 +384,7 @@ function create_database_header_table() {
 
 
 function create_database_table_body_row(database) {
-    const cfg = {
-        icon: "fas fa-signal",
-        color: "bg-yellow-500"
-    };
+    const cfg = defaultTheme.mobile.databases;
 
     return "                                    <tr class=\"whitespace-nowrap \">\n" +
         "                                        <td class=\"px-2 py-1 text-xs text-gray-500\">\n" +
@@ -474,16 +470,14 @@ function create_mobile_clients(data){
 }
 
 function create_load_balancer(data) {
-    const cfg = {
-        icon: "fas fa-network-wired",
-        color: "bg-blue-500"
-    };
+    const cfg = defaultTheme.mobile.network;
+
 
     return "<div class=\"mx-2 flex-column\">" +
-        "<div class=\"text-xs text-yellow-600 text-right\"><p>"+data.publicAddress+"</p></div>"+
+        "<div class=\"text-xs "+cfg.urlColor+" text-right \"><p>"+data.publicAddress+"</p></div>"+
         "<div class=\"z-10 border-b-2 border-black-400 border-dashed\"></div>"+
         "<div class=\"grid justify-items-center \">"+
-        "   <div class=\"-my-3 mx-10 px-6 py-1 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400\"><i class=\"" + cfg.icon + "\"><span class='px-2'>Load Balancer</span></i></div>\n"+
+        "   <div class=\"-my-3 mx-10 px-6 py-1 text-xs "+cfg.textColor+" font-bold " + cfg.color + " rounded-xl shadow-400\"><i class=\"" + cfg.icon + "\"><span class='px-2'>"+cfg.displayText+"</span></i></div>\n"+
         "</div>"+
     "</div>";
 }

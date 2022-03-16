@@ -313,7 +313,7 @@ let data = {
 
 * **mobile**: Sync Gateway and Couchbase Lite topology information
 
-```json
+```
  mobile: {
              version: "2.8.3",
                 groups : [{

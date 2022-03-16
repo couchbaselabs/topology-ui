@@ -1,7 +1,46 @@
-const defaultSyncGatewayGroupColors = ["border-blue-400 ", "border-green-500 ", "border-yellow-500 "]
-const defaultSyncGatewayGroupDisplayColors = ["bg-blue-400 ", "bg-green-500 ", "bg-yellow-500 "]
-const defaultServerGroupColors = ["border-blue-400 bg-blue-50", "border-green-500 bg-green-50", "border-yellow-500 bg-yellow-50"]
-const defaultServerGroupDisplayColor = ["bg-blue-400", "bg-green-500", "bg-yellow-500"]
+const defaultTheme = {
+    mobile: {
+        groups: [{ border: "border-blue-400", color: "bg-blue-400"},
+            { border: "border-green-500", color: "bg-green-500"},
+            { border: "border-yellow-500", color: "bg-yellow-500"}],
+        databases: { icon: "fas fa-signal", color: "bg-orange-400"},
+        network: {
+            urlColor: "text-orange-400",
+            icon: "fas fa-network-wired",
+            color: "bg-blue-500",
+            textColor: "text-white",
+            displayText: "Load Balancer"
+        },
+        version: {
+            color: "bg-red-700",
+            lineColor: "border-red-200",
+            textColor: "text-white"
+        }
+    },
+    cluster: {
+        groups: [ { border: "border-blue-400 bg-blue-50", color: "bg-blue-400"},
+            { border: "border-green-500 bg-green-50", color: "bg-green-500"},
+            { border: "border-yellow-500 bg-yellow-50", color: "bg-yellow-500"}] ,
+        buckets: {
+            ephemeral: {color: "bg-orange-400", icon: "fas fa-database"},
+            couchbase: {color: "bg-blue-400", icon: "fas fa-database"},
+            magma: {color: "bg-green-500", icon: "fas fa-database"},
+            total: {color: "bg-gray-800", icon: "fas fa-plus-square"},
+            default: {color: "bg-blue-400", icon: "fas fa-database"}
+        },
+        version: {
+            color: "bg-red-400",
+            textColor: "text-white"
+        }
+    },
+    resources: {
+        color: "bg-gray-700",
+        textColor: "text-white"
+    }
+}
+
+
+
 
 function add_cluster_name(clusterName) {
     // set cluster name
@@ -30,27 +69,35 @@ function add_node_name(name) {
     return "   <p class=\"flex-row text-xs text-gray-400 font-bold " + hidden + " \">" + displayName + "</p>"
 }
 
-function add_node_image(resources) {
-    let height = 60;
+function create_resources(resources) {
     let hidden = "hidden";
     let memory = 1;
     let cpus = 0.5;
+    let cfg = defaultTheme.resources.color+" "+defaultTheme.resources.textColor;
     if (resources) {
-        height = 50
-        hidden = ""
         memory = resources.memory
         cpus = resources.cpus
+        hidden = "";
     }
-
-    return "<svg id=\"svg-node1\" y=\"10\" width=\"90\" height=\"" + height + "\">" +
-        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"images/nodebg.png\"/>" +
-        "        <div class=\"align-center top-0 " + hidden + "\">" +
-        "             <div class=\"-top-16 bg-gray-700 z-10 rounded-lg text-xs text-white font-bold mx-2 px-2 my-0 py-0\">" +
+    return "                                        <div class=\"align-center " + hidden + " \">\n" +
+           "                                            <div class=\" "+cfg+" rounded-lg text-xs font-bold mx-2 px-2 \">\n" +
+           "                                                <p>" + memory + " GB</p>" +
+           "                                                <p> " + cpus + " CPUs</p>" +
+           "                                            </div>\n" +
+           "                                        </div>\n" ;
+   /* return " <div class=\"-my-6 align-center " + hidden + "\">" +
+        "             <div class=\"bg-gray-700 z-50 rounded-lg text-xs text-white font-bold mx-2 px-2 py-0 my-4 \">" +
         "               <p>" + memory + " GB</p>" +
         "               <p> " + cpus + " CPUs</p>" +
         "             </div>" +
-        "         </div>" +
-        "</svg>"
+        "         </div>"*/
+}
+
+function add_node_image(resources) {
+    let height = resources? 50 : 60;
+    return "<svg id=\"svg-node1\" y=\"10\" width=\"90\" height=\"" + height + "\">" +
+        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"images/nodebg.png\"/>" +
+        "</svg>";
 }
 
 function create_node_service(service) {
@@ -66,9 +113,10 @@ function add_node_services(services) {
 }
 
 function create_node(node) {
-    return "<div class=\"isolate-auto static flex-row max-w-100 py-2 my-0 space-y-0\">" +
+    return "<div class=\"flex-row max-w-100 py-2 my-0 space-y-0\">" +
         add_node_name(node.name) +
         add_node_image(node.resources) +
+        create_resources(node.resources)+
         add_node_services(node.services) +
         "</div>"
 }
@@ -81,12 +129,11 @@ function create_server_group_nodes(sgNodes) {
 }
 
 function create_server_group(sg, groupsVisible, position) {
-    let color = defaultServerGroupColors[position % defaultServerGroupColors.length]
-    let colorDisplay = defaultServerGroupDisplayColor[position % defaultServerGroupDisplayColor.length]
+    let cfg = defaultTheme.cluster.groups[position % defaultTheme.cluster.groups.length];
     // server group name
     if (sg && groupsVisible) {
-        return "<div class=\"rounded-xl border-2 " + color + " border-dashed\">" +
-            create_server_group_displayName(sg.name, groupsVisible, colorDisplay) +
+        return "<div class=\"rounded-xl border-2 " + cfg.border + " border-dashed mb-1\">" +
+            create_server_group_displayName(sg.name, groupsVisible, cfg.color) +
             create_server_group_nodes(sg.nodes) +
             "</div>";
     } else {
@@ -106,40 +153,20 @@ function create_server_groups(serverGroups) {
         position++;
     });
     // server groups
-    return "<div class=\"m-8 flex flex-wrap rounded-lg font-bold lg:space-x-4 font-bold text-red-700 text-center align-center\">" +
+    return "<div class=\"mx-8 mt-8 flex flex-wrap rounded-lg font-bold lg:space-x-4 font-bold text-red-700 text-center align-center\">" +
         serverGroupsDiv +
         "</div>";
 
 }
 
 function create_cluster_version(version) {
-    return "<div class=\"flex flex-row-reverse -my-3\">" +
-        "    <span class=\"bg-red-700 border-white border-4 rounded-xl text-xs text-white font-bold mx-2 px-2 my-0 py-0\">v" + version + "</span>" +
-        "</div>";
-}
-
-function create_server_resources(resources) {
-    //todo
-    let hidden = "hidden";
-    let cpus = 0.5;
-    let memory = 1;
-    if (resources) {
-        hidden = ""
-        if (resources.cpus)
-            cpus = resources.cpus
-        if (resources.memory)
-            memory = resources.memory
-    }
-    return " <div class=\"-my-6 align-center " + hidden + "\">" +
-        "             <div class=\"bg-gray-700 z-50 rounded-lg text-xs text-white font-bold mx-2 px-2 py-0 my-4 \">" +
-        "               <p>" + memory + " GB</p>" +
-        "               <p> " + cpus + " CPUs</p>" +
-        "             </div>" +
-        "         </div>"
+    return version ?  "<div class=\"flex flex-row-reverse -mt-1 \">" +
+        "    <span class=\"bg-red-700 border-white border-4 rounded-xl text-xs text-white font-bold mx-2 px-2 mt-0 -mb-3 py-0\">v" + version + "</span>" +
+        "</div>": "";
 }
 
 function create_bucket_header_table() {
-    return "                                    <thead class=\"border-b-2 border-yellow-400\">\n" +
+    return "                                    <thead class=\"border-b-2 border-orange-400\">\n" +
         "                                    <tr>\n" +
         "                                        <th class=\"px-2 py-2 text-xs text-gray-500\">\n" +
         "                                            Buckets\n" +
@@ -184,78 +211,53 @@ function format_number(size, base, sizes, decimals = 2) {
     return parseFloat((size / Math.pow(base, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+function get_bucket_config(type) {
+    return defaultTheme.cluster.buckets[type]? defaultTheme.cluster.buckets[type] : defaultTheme.cluster.buckets.default;
+}
+
 function create_buckets_table_body_row(bucket) {
-    let cfg = {};
-    switch (bucket.type) {
-        case 'couchbase':
-            cfg = {
-                icon: "fas fa-database",
-                colors: ["bg-blue-400", "bg-gray-400", "bg-yellow-300", "bg-yellow-500", "bg-yellow-800"]
-            };
-            break;
-        case 'ephemeral':
-            cfg = {
-                icon: "fas fa-database",
-                colors: ["bg-yellow-500", "bg-gray-400", "bg-yellow-300", "bg-yellow-500", "bg-yellow-800"]
-            };
-            break;
-        case 'magma':
-            cfg = {
-                icon: "fas fa-database",
-                colors: ["bg-green-500", "bg-gray-400", "bg-yellow-300", "bg-yellow-500", "bg-yellow-800"]
-            };
-            break;
-        case 'total':
-            cfg = {
-                icon: "fas fa-plus-square",
-                colors: ["bg-gray-800", "bg-gray-800", "bg-gray-800", "bg-gray-800", "bg-gray-800"]
-            };
-            break;
-        default:
-            cfg = {
-                icon: "fas fa-database",
-                colors: ["bg-blue-400", "bg-gray-400", "bg-yellow-300", "bg-yellow-500", "bg-yellow-800"]
-            };
-            break;
-    }
+    let type = bucket.type ? bucket.type : "default";
+    let cfg = get_bucket_config(type);
+    let others = [bucket.type==="total"?"bg-gray-800":"bg-gray-400", bucket.type==="total"?"bg-gray-800":"bg-amber-400", "bg-orange-400", "bg-yellow-800"];
+    console.log("bucket config: ",type,JSON.stringify(cfg));
+    let replicas = bucket.replicas | "--";
 
     return "                                    <tr class=\"whitespace-nowrap\">\n" +
         "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            <div class=\"flex flex-row px-6 py-1 text-xs text-white font-bold " + cfg.colors[0] + " rounded-xl shadow-400 w-full\"><i class=\"" + cfg.icon + "\"><span class='px-2'>" + bucket.name + "</span></i></div>\n" +
+        "                                            <div class=\"flex flex-row px-6 py-1 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400 w-full\"><i class=\"" + cfg.icon + "\"><span class='px-2'>" + bucket.name + "</span></i></div>\n" +
         "                                        </td>\n" +
         "                                        <td class=\"px-2 py-2\">\n" +
         "                                            <div class=\"text-xs text-gray-900\">\n" +
-        "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + cfg.colors[1] + " rounded-xl shadow-400\">" + format_mb(bucket.quota) + "</span>\n" +
+        "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + others[0] + " rounded-xl shadow-400\">" + format_mb(bucket.quota) + "</span>\n" +
         "                                            </div>\n" +
         "                                        </td>\n" +
         "                                        <td class=\"px-2 py-2\">\n" +
         "                                            <div class=\"text-xs text-gray-900\">\n" +
-        "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + cfg.colors[2] + " rounded-xl shadow-400\">" + format_docs(bucket.documents) + "</span>\n" +
+        "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + others[1] + " rounded-xl shadow-400\">" + format_docs(bucket.documents) + "</span>\n" +
         "                                            </div>\n" +
         "                                        </td>\n" +
         "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
         "                                            <div class=\"text-xs text-gray-900\">\n" + (bucket.ratio ?
-            "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + cfg.colors[3] + " rounded-xl shadow-400\">" + bucket.ratio + " %</span>\n" :
-            "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+            "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + others[2] + " rounded-xl shadow-400\">" + bucket.ratio + " %</span>\n" :
+            "                                            <div class=\"text-xs text-gray-900 font-bold text-center\">\n" +
             "                                                --\n" +
             "                                            </div>\n") +
         "                                            </div>\n" +
         "                                        </td>\n" +
-        "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
-        "                                            <div class=\"text-xs text-gray-900\">\n" + (bucket.replicas ?
-            "                                                <span class=\"px-2 py-1 text-xs text-white font-bold " + cfg.colors[4] + " rounded-xl shadow-400\">" + bucket.replicas + "</span>\n" :
+        "                                        <td class=\"px-2 py-2 text-xs text-gray-500 text-center\">\n" +
+        "                                            <div class=\"text-xs text-gray-900\">\n" +
             "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
-            "                                                --\n" +
-            "                                            </div>\n") +
+                                                            replicas +
+            "                                            </div>\n" +
         "                                            </div>\n" +
         "                                        </td>\n" +
         "                                        <td class=\"px-2 py-2\">\n" +
-        "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+        "                                            <div class=\"text-xs text-gray-900 font-bold text-center\">\n" +
         "                                                --\n" +
         "                                            </div>\n" +
         "                                        </td>\n" +
         "                                        <td class=\"px-2 py-2\">\n" +
-        "                                            <div class=\"text-xs text-gray-900 font-bold\">\n" +
+        "                                            <div class=\"text-xs text-gray-900 font-bold text-center\">\n" +
         "                                                --\n" +
         "                                            </div>\n" +
         "                                        </td>\n" +
@@ -304,43 +306,49 @@ function create_buckets(buckets) {
 
 function create_sgwGroup(sgwGroupInstances, visibleGroups, position) {
     let sgws = "";
-    let color = defaultSyncGatewayGroupColors[position % defaultSyncGatewayGroupColors.length];
-    let displayColor = defaultSyncGatewayGroupDisplayColors[position % defaultSyncGatewayGroupDisplayColors.length];
+    let cfg = defaultTheme.mobile.groups[position % defaultTheme.mobile.groups.length];
     let sgName = sgwGroupInstances.name;
 
     sgwGroupInstances.instances.forEach(n => sgws += create_sgwInstance(n));
 
-    return visibleGroups ? "<div  class=\"my-2 border-2 " + color + "  border-dotted \">" +
+    return visibleGroups ? "<div  class=\"my-2 border-2 " + cfg.border + "  border-dotted \">" +
         "          <div class=\"-my-2 flex-row align-center\">" +
-        "             <span class=\"" + displayColor + " z-5 rounded-xl text-xs text-white font-bold mx-4 px-4 my-0 py-0\">" + sgName + "</span>" +
+        "             <span class=\"" + cfg.color + " z-5 rounded-xl text-xs text-white font-bold mx-4 px-4 my-0 py-0\">" + sgName + "</span>" +
         "          </div>" +
         "          <div class=\"flex flex-wrap \">" +
         sgws +
-        //  create_server_resources(sgwGroupInstances.resources)+
+        //  create_resources(sgwGroupInstances.resources)+
         "          </div>" +
         "</div>" :  "<div  class=\"-mt-4 mb-0 \">" +
         "          <div class=\"flex flex-wrap \">" +
         sgws +
-        //  create_server_resources(sgwGroupInstances.resources)+
+        //  create_resources(sgwGroupInstances.resources)+
         "          </div>" +
         "</div>";
 }
 
-function create_sgwInstance(sgwData) {
-    let showResources = "hidden";
-    var cpus = 0.5
-    var memory = 1
-    let height = 50;
-    if (sgwData.resources) {
-        showResources ="";
-        height = 35;
-        if (sgwData.resources.cpus)
-            cpus = sgwData.resources.cpus
-        if (sgwData.resources.memory)
-            memory = sgwData.resources.memory
-    }
+function create_svg(src, height=50, width=90) {
+   return "                                    <svg y=\"10\" width=\""+width+"\" height=\""+height+"\">\n" +
+          "                                        <image x=\"17\" y=\"-5\" width=\"55\" height=\"55\" preserveAspectRatio=\"none\" xlink:href=\""+src+"\" />\n" +
+          "                                    </svg>\n";
+}
 
+function create_instance(data,svg) {
     return "                          <div class=\"flex-row max-w-100 py-2 my-0\">\n" +
+        "                                    <p class=\"flex-row text-xs text-gray-400 font-bold\">" + data.nodeIp + "</p>\n" +
+        svg+
+        create_resources(data.resources)+
+        "                                    <div class=\"flex-row\">\n" +
+        "                                        <p>" + data.name + "</p>\n" +
+        "                                    </div>\n" +
+        "                                </div>\n";
+}
+
+function create_sgwInstance(sgwData) {
+    let height = sgwData.resources? 35: 50;
+    return create_instance(sgwData, create_svg("images/syncgateway.svg",height));
+    /*
+    "                          <div class=\"flex-row max-w-100 py-2 my-0\">\n" +
         "                                    <p class=\"flex-row text-xs text-gray-400 font-bold\">" + sgwData.nodeIp + "</p>\n" +
         "                                    <svg y=\"10\" width=\"90\" height=\""+height+"\">\n" +
         "                                        <image x=\"17\" y=\"-5\" width=\"55\" height=\"55\" preserveAspectRatio=\"none\" xlink:href=\"images/syncgateway.svg\" />\n" +
@@ -354,10 +362,11 @@ function create_sgwInstance(sgwData) {
         "                                    <div class=\"flex-row\">\n" +
         "                                        <p>" + sgwData.name + "</p>\n" +
         "                                    </div>\n" +
-        "                                </div>\n";
+        "                                </div>\n";*/
 }
 
 function create_sgwGroups(data) {
+    let versionBorder = data.version ? "border-b-2 "+defaultTheme.mobile.version.lineColor: "";
     let sgwGroups = "";
     let position = 0;
     const visibleGroups = data.groups.length > 1;
@@ -366,15 +375,18 @@ function create_sgwGroups(data) {
         position++;
     });
 
-    return "<div class=\"mx-8 mb-2 mt-8 flex flex-wrap rounded-lg font-bold lg:space-x-4 font-bold text-red-700 text-center align-center\">" +
-        sgwGroups +
-        // create_server_resources(data.mobile.resources)+
+    return "<div class=\"flow-column  \">" +
+        "<div class=\"mx-8 mb-2 mt-8 flex flex-wrap font-bold lg:space-x-4 font-bold text-red-700 text-center align-center "+versionBorder+" \">" +
+        sgwGroups+
+        "</div>"+
+    // create_resources(data.mobile.resources)+
+        create_version(data.version)+
         "</div>";
 }
 
 
 function create_database_header_table() {
-    return "                               <thead class=\"border-b-2 border-yellow-400\">\n" +
+    return "                               <thead class=\"border-b-2 border-orange-400\">\n" +
         "                                    <tr>\n" +
         "                                        <th class=\"px-2 py-1 text-xs text-gray-500\">\n" +
         "                                            Databases\n" +
@@ -385,10 +397,7 @@ function create_database_header_table() {
 
 
 function create_database_table_body_row(database) {
-    const cfg = {
-        icon: "fas fa-signal",
-        color: "bg-yellow-500"
-    };
+    const cfg = defaultTheme.mobile.databases;
 
     return "                                    <tr class=\"whitespace-nowrap \">\n" +
         "                                        <td class=\"px-2 py-1 text-xs text-gray-500\">\n" +
@@ -474,25 +483,29 @@ function create_mobile_clients(data){
 }
 
 function create_load_balancer(data) {
-    const cfg = {
-        icon: "fas fa-network-wired",
-        color: "bg-blue-500"
-    };
+    const cfg = defaultTheme.mobile.network;
+
 
     return "<div class=\"mx-2 flex-column\">" +
-        "<div class=\"text-xs text-yellow-600 text-right\"><p>"+data.publicAddress+"</p></div>"+
+        "<div class=\"text-xs "+cfg.urlColor+" text-right \"><p>"+data.publicAddress+"</p></div>"+
         "<div class=\"z-10 border-b-2 border-black-400 border-dashed\"></div>"+
         "<div class=\"grid justify-items-center \">"+
-        "   <div class=\"-my-3 mx-10 px-6 py-1 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400\"><i class=\"" + cfg.icon + "\"><span class='px-2'>Load Balancer</span></i></div>\n"+
+        "   <div class=\"-my-3 mx-10 px-6 py-1 text-xs "+cfg.textColor+" font-bold " + cfg.color + " rounded-xl shadow-400\"><i class=\"" + cfg.icon + "\"><span class='px-2'>"+cfg.displayText+"</span></i></div>\n"+
         "</div>"+
     "</div>";
 }
 
+function create_version(version) {
+    return version ?  "<div class=\"flex flex-row-reverse \">" +
+        "    <span class=\""+defaultTheme.mobile.version.color+" border-white border-4 rounded-xl text-xs text-white font-bold mx-2 px-2 mb-0 -mt-4 py-0\">v" + version + "</span>" +
+        "</div>": "";
+}
+
 function create_mobile(data) {
-    return data ? "<div class=\"flex-column\">" +
+    return data ? "<div class=\"flex-column mb-2 -pb-2\">" +
         create_mobile_clients(data.clients)+
         create_load_balancer(data)+
-          "<div class=\"mx-2 flex flex-row font-bold font-bold text-red-700 text-center text-xs\">" +
+          "<div class=\"mx-2 -my-2 flex flex-row font-bold font-bold text-red-700 text-center text-xs \">" +
               create_sgwGroups(data) +
               create_mobile_databases(data.databases) +
           "</div>" +
@@ -511,10 +524,10 @@ function create_cluster(content, data) {
         create_apps(data.applications) +
         "</div>" +
         "<div class=\"flex flex-row\">" +
-        "<div id=\"cluster-info\" class=\"mx-4 mb-4 flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
+        "<div id=\"cluster-info\" class=\"m-4 flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
         add_cluster_name(data.name) +
         create_server_groups(data.serverGroups) +
-        create_server_resources(data.resources) +
+        create_resources(data.resources) +
         create_cluster_version(data.version) +
         "</div>" +
         create_buckets(data.buckets) +

@@ -30,7 +30,7 @@
     </main>
 </div>
 <script>
-    let data =
+     let data =
         {
             name: "cb-demo",
             version: "6.6.3",
@@ -78,6 +78,7 @@
                 { name: "mybucket3", quota: 5590, type: "magma", documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic"]}],
             status: "HEALTHY",
             mobile: {
+                version: "2.8.3",
                 resources: {
                     memory: 32,
                     cpus: 8
@@ -109,6 +110,7 @@
             applications: {},
             connectors: {}
         }
+
     let content = document.getElementById("display");
     create_cluster(content, data);
 </script>

@@ -128,6 +128,7 @@
                 { name: "mybucket3", quota: 5590, type: "magma", documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic"]}],
             status: "HEALTHY",
             mobile: {
+                version: "2.8.3",
                 resources: {
                     memory: 32,
                     cpus: 8

@@ -28,6 +28,8 @@ const defaultTheme = {
             total: {color: "bg-gray-800", icon: "fas fa-plus-square"},
             default: {color: "bg-blue-400", icon: "fas fa-database"}
         },
+        scope: { color: "bg-gray-300", textColor: "text-white", iconFold: "fas fa-book-medical", iconExtend:"fas fa-minus" },
+        collections: { color: "bg-blue-200", textColor: "text-white", icon: "fas fa-ellipsis-v"},
         version: {
             color: "bg-red-400",
             textColor: "text-white"
@@ -220,7 +222,7 @@ function create_buckets_table_body_row(bucket) {
     let cfg = get_bucket_config(type);
     let others = [bucket.type==="total"?"bg-gray-800":"bg-gray-400", bucket.type==="total"?"bg-gray-800":"bg-amber-400", "bg-orange-400", "bg-yellow-800"];
     console.log("bucket config: ",type,JSON.stringify(cfg));
-    let replicas = bucket.replicas | "--";
+    let replicas = bucket.replicas ? bucket.replicas : "--";
 
     return "                                    <tr class=\"whitespace-nowrap\">\n" +
         "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
@@ -261,6 +263,14 @@ function create_buckets_table_body_row(bucket) {
         "                                                --\n" +
         "                                            </div>\n" +
         "                                        </td>\n" +
+        "                                    </tr>\n"+
+
+
+
+        "                                    <tr class=\"whitespace-nowrap\">\n" +
+        "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+        "                                            <div class=\"mx-4 flex flex-row px-6 py-1 text-xs text-white font-bold " + defaultTheme.cluster.scope.color + " rounded-xl shadow-400 w-100\"><i class=\"" + defaultTheme.cluster.scope.iconFold + "\"><span class='px-2'>scope1</span></i></div>\n" +
+        "                                        </td>\n" +
         "                                    </tr>\n";
 }
 
@@ -288,8 +298,138 @@ function create_buckets_table_total(buckets) {
     return body;
 }
 
+function create_grid_header(data) {
+    return "<div class=\"grid grid-cols-7 border-b-2 border-orange-400 text-xs text-gray-500 text-center font-bold p-2\"> \n " +
+            "   <div><p>Buckets</p></div> \n " +
+            "   <div><p>Quota</p></div> \n " +
+            "   <div><p>#docs</p></div> \n " +
+            "   <div><p>%Resident</p></div> \n " +
+            "   <div><p>Replicas</p></div> \n " +
+            "   <div><p>Connectors</p></div> \n " +
+            "   <div><p>TTL</p></div> \n " +
+            "</div> \n ";
+}
+
+function create_grid_scope(data) {
+    return data?
+        "<div>" +
+        create_grid_scope_header(data)+
+        create_grid_scope_body(data)+
+        "</div>"
+        :"";
+}
+
+function create_grid_body_row(data) {
+    let type = data.type ? data.type : "default";
+    let cfg = get_bucket_config(type);
+    let others = [data.type==="total"?"bg-gray-800":"bg-gray-400", data.type==="total"?"bg-gray-800":"bg-amber-400", "bg-orange-400", "bg-yellow-800"];
+    console.log("bucket config: ",type,JSON.stringify(cfg));
+    let replicas = data.replicas ? data.replicas : "--";
+    let total = (data.scopes ? "<span class=\"px-2 bg-white rounded-full text-blue-400\">"+data.scopes.length+" </span>" :
+               "");
+               // Adding number of buckets =>  data.total ? "<span class=\"px-2 bg-white rounded-full text-blue-400\">"+data.total+" </span>": "");
+
+    return  "<div class=\"grid grid-cols-7 text-xs text-gray-500 text-center font-bold p-2\"> \n " +
+        "    <div class=\"flex flex-row px-6 py-1 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400 w-full\">" +
+        "        <i class=\"" + cfg.icon + "\"><span class=\"px-2\">" + data.name + "   </span>" + total + "</i>" +
+        "    </div>\n" +
+        "    <div class=\"text-xs text-gray-900\">\n" +
+        "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[0] + " rounded-xl shadow-400\">" + format_mb(data.quota) + "</span>\n" +
+        "    </div>\n" +
+        "    <div class=\"text-xs text-gray-900\">\n" +
+        "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[1] + " rounded-xl shadow-400\">" + format_docs(data.documents) + "</span>\n" +
+        "    </div>\n" +
+        "    <div class=\"text-xs text-gray-900\">\n" + (data.ratio ?
+        "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[2] + " rounded-xl shadow-400\">" + data.ratio + " %</span>\n" :
+        "        <div class=\"text-xs text-gray-900 font-bold text-center\">\n" +
+        "          --\n" +
+        "        </div>\n") +
+        "    </div>\n" +
+        "    <div class=\"text-xs text-gray-900 font-bold\">\n" +
+        replicas +
+        "    </div>\n" +
+        "    <div class=\"text-xs text-gray-900 font-bold text-center\">\n" +
+        "         --\n" +
+        "    </div>\n" +
+        "    <div class=\"text-xs text-gray-900 font-bold text-center\">\n" +
+        "         --\n" +
+        "    </div>\n" +
+        "</div> \n "//+
+      //  create_grid_scopes(data.scopes)
+        ;
+
+    /*
+        "                                    <tr class=\"whitespace-nowrap\">\n" +
+        "                                        <td class=\"px-2 py-2 text-xs text-gray-500\">\n" +
+        "                                            <div class=\"mx-4 flex flex-row px-6 py-1 text-xs text-white font-bold " + defaultTheme.cluster.scope.color + " rounded-xl shadow-400 w-100\"><i class=\"" + defaultTheme.cluster.scope.iconFold + "\"><span class='px-2'>scope1</span></i></div>\n" +
+        "                                        </td>\n" +
+        "                                    </tr>\n";
+
+     */
+}
+
+function create_grid_body(data) {
+    let body ="";
+    data.forEach( b => body += create_grid_body_row(b));
+    return body;
+}
+
+function create_grid_summary(data) {
+    let body = "";
+    if (data && data.length > 1) {
+        body = "<div class=\"border-t border-gray-200 bg-gray-100\">"
+        let bucket = data.reduce((b1, b2) => {
+            return {
+                name: "Total",
+                quota: b1.quota + b2.quota,
+                documents: b1.documents + b2.documents,
+                type: "total",
+                total: data.length
+            }
+        });
+        body += create_grid_body_row(bucket);
+        body += "</div>";
+    }
+    return body;
+}
+
+function create_buckets_grid_table(data) {
+    return data?
+        "<div class=\"grid grid-cols-1\">" +
+        create_grid_header(data)+
+        create_grid_body(data)+
+        create_grid_summary(data)+
+        "</div>"
+        :"";
+}
+
 function create_buckets(buckets) {
-    return buckets ? "  <div id=\"buckets\" class=\"mt-1\" >\n" +
+
+    return buckets ?
+        "<div class=\"mt-1 flex flex-row \" >\n " +
+        "     <div class=\"flex flex-col\">\n " +
+       // "       <div class=\"w-full\">\n " +
+        create_buckets_grid_table(buckets)+
+    //    "       </div>    " +
+        "     </div> "+
+        "</div> "
+     /*   "  <div class=\"mt-1\" >\n" +
+        "                    <div class=\"flex flex-col\">\n" +
+        "                        <div class=\"w-full\">\n" +
+        "                            <div>\n" +
+        "                                <table>\n" +
+        create_bucket_header_table() +
+        create_buckets_table_body(buckets) +
+        create_buckets_table_total(buckets) +
+        "                                </table>\n" +
+        "                            </div>\n" +
+        "                        </div>\n" +
+        "                    </div>\n" +
+        "                </div>"*/
+
+        : "";
+    /*
+    return buckets ? "  <div class=\"mt-1\" >\n" +
         "                    <div class=\"flex flex-col\">\n" +
         "                        <div class=\"w-full\">\n" +
         "                            <div>\n" +
@@ -302,6 +442,7 @@ function create_buckets(buckets) {
         "                        </div>\n" +
         "                    </div>\n" +
         "                </div>": "";
+     */
 }
 
 function create_sgwGroup(sgwGroupInstances, visibleGroups, position) {
@@ -524,13 +665,19 @@ function create_cluster(content, data) {
         create_apps(data.applications) +
         "</div>" +
         "<div class=\"flex flex-row\">" +
-        "<div id=\"cluster-info\" class=\"m-4 flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
+        "  <div class=\"flex-column align-center \">"+
+        "   <div class=\"m-4 flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
         add_cluster_name(data.name) +
         create_server_groups(data.serverGroups) +
         create_resources(data.resources) +
         create_cluster_version(data.version) +
-        "</div>" +
+        "      </div>" +
+        "  </div>"+
+        "  <div class=\"flex-column \">"+
+        "   <div class=\"m-4 flex-row shadow-sm \">" +
         create_buckets(data.buckets) +
+        "      </div>" +
+        "  </div>" +
         "</div>" +
         "</div>";
 }

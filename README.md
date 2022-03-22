@@ -188,9 +188,24 @@ let data = {
                     status: "HEALTHY"
                 }
             ],
-            buckets: [{ name: "mybucket", quota: 5590, documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic"]},
-                { name: "mybucket2", quota: 5590, type: "ephemeral", documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic"]},
-                { name: "mybucket3", quota: 5590, type: "magma", documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic"]}],
+            buckets: [
+                { name: "mybucket", type: "couchbase", quota: 5590, documents: 39000000, replicas:1, ratio: 49, 
+                   scopes: [{ name: "scope1", 
+                              collections:[{name: "collection1"} ]}], 
+                   connectors: ["mobile","kafka", "elastic", "spark"]
+                }
+                { name: "mybucket2", type: "ephemeral", quota: 5590, documents: 39000000, ratio: 32, replicas:1
+                   scopes: [{ name: "scope1", documents: 39000000, 
+                         collections:[{name: "collection1", documents: 39000000}]}], 
+                         connectors: ["mobile","kafka", "elastic"]
+                },
+                { name: "mybucket3", type: "magma", quota: 5590, replicas:1, documents: 39000000, ratio: 75, 
+                  scopes: [{ name: "scope1", documents: 34000000},
+                           { name: "scope2", documents: 5000000, 
+                                collections:[{name: "collection1", documents: 5000000}]}
+                          ],
+                  connectors: ["mobile","kafka", "elastic"]}
+              ],
             status: "HEALTHY",
             mobile: {
 	        version: "2.8.3",
@@ -302,12 +317,27 @@ let data = {
 * **buckets**: Array of Buckets.     
 
 ```   
- buckets: [{ name: "mybucket", type: "couchbase" , quota: 5590, documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic", "spark"]},
-           { name: "mybucket2", type: "ephemeral", quota: 5590, documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic", "spark"]},
-           { name: "mybucket3", type: "magma"    , quota: 5590, documents: 39000000, ratio: 49, connectors: ["mobile","kafka", "elastic", "spark"]}]     
+             buckets: [
+                { name: "mybucket", type: "couchbase", quota: 5590, documents: 39000000, replicas:1, ratio: 49, 
+                   scopes: [{ name: "scope1", 
+                              collections:[{name: "collection1"} ]}], 
+                   connectors: ["mobile","kafka", "elastic", "spark"]
+                }
+                { name: "mybucket2", type: "ephemeral", quota: 5590, documents: 39000000, ratio: 32, replicas:1
+                   scopes: [{ name: "scope1", documents: 39000000, 
+                         collections:[{name: "collection1", documents: 39000000}]}], 
+                         connectors: ["mobile","kafka", "elastic"]
+                },
+                { name: "mybucket3", type: "magma", quota: 5590, replicas:1, documents: 39000000, ratio: 75, 
+                  scopes: [{ name: "scope1", documents: 34000000},
+                           { name: "scope2", documents: 5000000, 
+                                collections:[{name: "collection1", documents: 5000000}]}
+                          ],
+                  connectors: ["mobile","kafka", "elastic"]}
+              ]
 ```
 
-*Note: Information at the scope/collections level is not supported yet.* 
+*Note: Information at the bucket/scope/collections level is optional.* 
 
 * **status**: Status of the cluster. 
 

@@ -316,6 +316,8 @@ let data = {
 
 * **buckets**: Array of Buckets. You can define `ephemeral`, `couchbase` and `magma` bucket types. The default value if `type` property is missing is `couchbase`. Optionally, you can display the list of scopes and collections per scope. Another optional property among others, is `connectors` that would accept the following enum values: `mobile`, `kafka`, `elastic`, `spark`
 
+![scopes/collections](docs/assets/scopes-collections.png)
+
 ```   
              buckets: [
                 { name: "mybucket", type: "couchbase", quota: 5590, documents: 39000000, replicas:1, ratio: 49, 

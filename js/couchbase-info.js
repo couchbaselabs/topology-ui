@@ -79,6 +79,8 @@ const defaultTheme = {
     }
 }
 
+let sequenceId = 0;
+
 
 function add_cluster_name(clusterName) {
     // set cluster name
@@ -259,7 +261,7 @@ function create_collection(data, cfg = defaultTheme.cluster.buckets.default) {
         : "";
 }
 
-function create_grid_scope_body(data, cfg = defaultTheme.cluster.buckets.default) {
+function create_grid_scope_body(id, data, cfg = defaultTheme.cluster.buckets.default) {
     let collections = "";
     let ndocs = data.documents ? format_docs(data.documents, 2) : "--";
     let marginBottom = "mb-1";
@@ -286,18 +288,21 @@ function create_grid_scope_body(data, cfg = defaultTheme.cluster.buckets.default
         + collections;
 }
 
-function create_grid_scope(data, cfg = defaultTheme.cluster.buckets.default) {
-    return data ? create_grid_scope_body(data, cfg) : "";
+function create_grid_scope(id, data, cfg = defaultTheme.cluster.buckets.default) {
+    return data ? create_grid_scope_body(id, data, cfg) : "";
 }
 
-function create_grid_scopes(data, cfg = defaultTheme.cluster.buckets.default) {
+function create_grid_scopes(id, data, cfg = defaultTheme.cluster.buckets.default) {
     let scopes = "";
     if (data && data.length > 0) {
-        scopes = "<div class = \"grid grid-cols-8 \"> " +
+        scopes ="<div id='"+id+"' class=\"collapse show\">" +
+            "<div class = \"grid grid-cols-8 \"> " +
             "   <div class='grid col-span-8'>";
-        data.forEach(scope => scopes += create_grid_scope(scope, cfg) + "\n ")
+        let idSeq = 0;
+        data.forEach(scope => scopes += create_grid_scope(id+""+(idSeq++), scope, cfg) + "\n ")
         scopes += "    </div> " +
-            "</div>";
+            "</div>"+
+        "</div>";
     }
     return scopes;
 }
@@ -354,7 +359,6 @@ function create_svg_icon(src) {
 }
 
 function create_connector_icon(data) {
-    console.log("connector: ", data)
     return create_svg_icon("images/connector-" + data + ".svg");
 }
 
@@ -368,11 +372,16 @@ function get_connectors(data) {
     return connectors;
 }
 
+function increaseSequence(){
+    return sequenceId++;
+}
+
 function create_grid_body_row(data) {
+    let id = "bucket"+increaseSequence();
+    console.log(id);
     let type = data.type ? data.type : "default";
     let cfg = get_bucket_config(type);
     let others = [data.type === "total" ? "bg-gray-800" : "bg-gray-400", data.type === "total" ? "bg-gray-800" : "bg-amber-400", "bg-orange-400", "bg-yellow-800"];
-    console.log("bucket config: ", type, JSON.stringify(cfg));
     let replicas = data.replicas ? data.replicas : "--";
     let total = "";
     let scopes = "";
@@ -382,13 +391,15 @@ function create_grid_body_row(data) {
     if (data.scopes) {
         total = "<div class=\" px-2 bg-white rounded-full text-blue-400 \">" + data.scopes.length + " </div>";
         // Adding number of buckets =>  data.total ? "<span class=\"px-2 bg-white rounded-full text-blue-400\">"+data.total+" </span>": "");
-        scopes = create_grid_scopes(data.scopes, cfg);
+        scopes = create_grid_scopes(id, data.scopes, cfg);
     }
 
     return "<div class=\"grid grid-cols-8 gap-0 text-xs text-gray-500 text-center font-bold pb-1 break-normal justify-items-center\"> \n " +
         "    <div class=\"col-span-2 grid grid-nowrap content-center justify-self-stretch justify-items-start px-2 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400\">" +
-        "      <div class=\"flex flex-row flex-nowrap justify-self-stretch items-center\">" +
-        "        <i class=\"" + cfg.icon + "  pl-1\"><span class=\"px-2\">" + data.name + "   </span>" + "</i>" + total +
+        "      <div id=\""+id+"\" class=\"flex flex-row flex-nowrap justify-self-stretch items-center\">" +
+        "        <button class=\"inline-block px-6 py-2.5 bg-blue-600 text-white font-medium text-xs leading-tight uppercase rounded shadow-md hover:bg-blue-700 hover:shadow-lg focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-blue-800 active:shadow-lg transition duration-150 ease-in-out\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#"+id+"\" aria-expanded=\"false\" aria-controls=\""+id+"\">" +
+        "              <i class=\"" + cfg.icon + "  pl-1\"><span class=\"px-2\">" + data.name + "   </span>" + "</i>" + total +
+        "        </button>"+
         "      </div>\n" +
         "    </div>" +
         "    <div class=\"grid grid-nowrap text-xs text-gray-900 break-normal\">\n" +
@@ -581,7 +592,6 @@ function create_os_icons(data) {
             icons +
             "      </div>";
     }
-    console.log('salida: ', output);
     return output;
 }
 

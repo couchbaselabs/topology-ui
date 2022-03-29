@@ -11,7 +11,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.css" rel="stylesheet" type="text/css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.js"></script>
     <!-- topology-ui -->
-    <script src="./js/couchbase-info.js"></script>
+    <!--  <script src="couchbase-info.js"></script> -->
+    
 </head>
 <body >
 <!-- <body> -->
@@ -29,7 +30,7 @@
         </div>
     </main>
 </div>
-<script>
+<script type="module">
 
   let data =
         {
@@ -475,10 +476,13 @@
 
      */
     let content = document.getElementById("display");
+    import { create_cluster } from './couchbase-info.js';
     create_cluster(content, data);
 </script>
-<script>
+<script type="module">
         // create the editor
+        import { create_cluster } from './couchbase-info.js';
+        let data;
         let content5 = document.getElementById("display");
         const container = document.getElementById("jsoneditor")
         const options = { mode: 'tree', name: "Cluster Topology",
@@ -487,10 +491,9 @@
                 create_cluster(content5, data)
             }
         }
-        const editor = new JSONEditor(container, options)
+        const editor = new JSONEditor(container, options);
 
-
-        editor.set(data)
+        editor.set(data);
 </script>
 </body>
 </html>

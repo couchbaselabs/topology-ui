@@ -3,7 +3,7 @@
 // import {create_mobile} from './modules/mobile-ui.js'
 // import {create_apps} from './modules/sdkapps-ui.js'
 
-export function create_cluster(content, data) {
+ export function create_cluster(content, data) {
     content.innerHTML = "<div class=\"flex flex-col justify-content-center\">" +
         "<div class=\"flex flex-row justify-content-center items-center \">" +
         create_mobile(data.mobile) +
@@ -228,7 +228,7 @@ function create_mobile_client(data) {
         "                                    <div class=\"px-2 flex flex-row\">" +
         "                                            <div class=\"m-1 " + (data.total ? "" : "hidden") + "\"><span class=\"p-1 rounded-full bg-black text-white font-bold text-xs\">" + data.total + "x</span></div>" +
         "                                            <svg width=\"30\" height=\"40\">\n" +
-        "                                                <image width=\"30\" height=\"40\" preserveAspectRatio=\"none\" xlink:href=\"images/couchbaselite.svg\" />\n" +
+        "                                                <image width=\"30\" height=\"40\" preserveAspectRatio=\"none\" xlink:href=\"/images/couchbaselite.svg\" />\n" +
         "                                            </svg>\n" +
         create_os_icons(data.os) +
         "                                    </div>" +
@@ -241,7 +241,7 @@ function create_mobile_client(data) {
 }
 
 function create_os_icon(os) {
-    return create_svg_icon("images/os-" + os + ".svg");
+    return create_svg_icon("/images/os-" + os + ".svg");
 }
 
 function create_os_icons(data) {
@@ -273,7 +273,7 @@ function create_load_balancer(data) {
 
 function create_sgwInstance(sgwData) {
     let height = sgwData.resources ? 35 : 50;
-    return create_instance(sgwData, create_svg("images/syncgateway.svg", height));
+    return create_instance(sgwData, create_svg("/images/syncgateway.svg", height));
 }
 
 function create_sgwGroups(data) {
@@ -417,7 +417,7 @@ function add_node_name(name) {
 function add_node_image(resources) {
     let height = resources ? 50 : 60;
     return "<svg id=\"svg-node1\" y=\"10\" width=\"90\" height=\"" + height + "\">" +
-        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"images/nodebg.png\"/>" +
+        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"/images/nodebg.png\"/>" +
         "</svg>";
 }
 
@@ -500,7 +500,7 @@ function create_buckets(buckets) {
 }
 
 function create_connector_icon(data) {
-    return create_svg_icon("images/connector-" + data + ".svg");
+    return create_svg_icon("/images/connector-" + data + ".svg");
 }
 
 function get_connectors(data) {

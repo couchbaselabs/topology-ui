@@ -1,4 +1,4 @@
-export const defaultTheme = {
+const defaultTheme = {
     mobile: {
         groups: [{border: "border-blue-400", color: "bg-blue-400"},
             {border: "border-green-500", color: "bg-green-500"},
@@ -79,3 +79,4 @@ export const defaultTheme = {
     }
 }
 
+export { defaultTheme }

@@ -32,9 +32,10 @@
 </div>
 <script type="module">
 
-    let content = document.getElementById("display");
     import { create_cluster } from './couchbase-info.js';
     import { data } from './mockData.js';
+
+    let content = document.getElementById("display");
     
     create_cluster(content, data);
 

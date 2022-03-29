@@ -1,7 +1,7 @@
 import {create_resources, normalize} from "./utils.js"
 import {defaultTheme} from "./theme.js"
 
-export function create_server_topology(data) {
+function create_server_topology(data) {
     return   data ?      "   <div class=\"m-4 flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
         add_cluster_name(data.name) +
         create_server_groups(data.serverGroups) +
@@ -30,13 +30,10 @@ function add_node_name(name) {
     return "   <p class=\"flex-row text-xs text-gray-400 font-bold " + hidden + " \">" + displayName + "</p>"
 }
 
-
-
-
 function add_node_image(resources) {
     let height = resources ? 50 : 60;
     return "<svg id=\"svg-node1\" y=\"10\" width=\"90\" height=\"" + height + "\">" +
-        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"images/nodebg.png\"/>" +
+        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"/images/nodebg.png\"/>" +
         "</svg>";
 }
 
@@ -104,3 +101,5 @@ function create_cluster_version(version) {
         "    <span class=\"bg-red-700 border-white border-4 rounded-xl text-xs text-white font-bold mx-2 px-2 mt-0 -mb-3 py-0\">v" + version + "</span>" +
         "</div>" : "";
 }
+
+export { create_server_topology }

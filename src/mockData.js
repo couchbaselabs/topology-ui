@@ -1,4 +1,4 @@
-const data =
+let data =
         {
             name: "cb-demo",
             version: "6.6.3",

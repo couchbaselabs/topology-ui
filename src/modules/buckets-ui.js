@@ -1,8 +1,8 @@
-import {create_svg_icon, format_mb, format_docs} from "./utils.js"
-import {defaultTheme} from "./theme.js"
+import { create_svg_icon, format_mb, format_docs } from "./utils.js"
+import { defaultTheme } from "./theme.js"
 
 
-export function create_buckets(buckets) {
+function create_buckets(buckets) {
     return buckets ?
         "     <div class=\"flex flex-col flex-nowrap\">\n " +
         create_buckets_grid_table(buckets) +
@@ -11,7 +11,7 @@ export function create_buckets(buckets) {
 }
 
 function create_connector_icon(data) {
-    return create_svg_icon("images/connector-" + data + ".svg");
+    return create_svg_icon("/images/connector-" + data + ".svg");
 }
 
 function get_connectors(data) {
@@ -230,4 +230,4 @@ function get_ratio_value(data) {
         "        </div>\n")
 }
 
-
+export { create_buckets }

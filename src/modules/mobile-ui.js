@@ -1,8 +1,8 @@
-import {defaultTheme} from "./theme.js";
-import {create_svg_icon, create_instance, create_svg} from "./utils.js";
+import { defaultTheme } from "./theme.js";
+import { create_svg_icon, create_instance, create_svg } from "./utils.js";
 
 
-export function create_mobile(data) {
+function create_mobile(data) {
     return data ? "<div class=\"flex-column mb-2 -pb-2\">" +
         create_mobile_clients(data.clients) +
         create_load_balancer(data) +
@@ -12,7 +12,6 @@ export function create_mobile(data) {
         "</div>" +
         "</div>" : "";
 }
-
 
 function create_mobile_clients(data) {
     let output = "";
@@ -33,7 +32,7 @@ function create_mobile_client(data) {
         "                                    <div class=\"px-2 flex flex-row\">" +
         "                                            <div class=\"m-1 " + (data.total ? "" : "hidden") + "\"><span class=\"p-1 rounded-full bg-black text-white font-bold text-xs\">" + data.total + "x</span></div>" +
         "                                            <svg width=\"30\" height=\"40\">\n" +
-        "                                                <image width=\"30\" height=\"40\" preserveAspectRatio=\"none\" xlink:href=\"images/couchbaselite.svg\" />\n" +
+        "                                                <image width=\"30\" height=\"40\" preserveAspectRatio=\"none\" xlink:href=\"/images/couchbaselite.svg\" />\n" +
         "                                            </svg>\n" +
         create_os_icons(data.os) +
         "                                    </div>" +
@@ -46,7 +45,7 @@ function create_mobile_client(data) {
 }
 
 function create_os_icon(os) {
-    return create_svg_icon("images/os-" + os + ".svg");
+    return create_svg_icon("/images/os-" + os + ".svg");
 }
 
 function create_os_icons(data) {
@@ -61,8 +60,6 @@ function create_os_icons(data) {
     return output;
 }
 
-
-
 function create_load_balancer(data) {
     const cfg = defaultTheme.mobile.network;
 
@@ -75,10 +72,9 @@ function create_load_balancer(data) {
         "</div>";
 }
 
-
 function create_sgwInstance(sgwData) {
     let height = sgwData.resources ? 35 : 50;
-    return create_instance(sgwData, create_svg("images/syncgateway.svg", height));
+    return create_instance(sgwData, create_svg("/images/syncgateway.svg", height));
 }
 
 function create_sgwGroups(data) {
@@ -100,7 +96,6 @@ function create_sgwGroups(data) {
         "</div>";
 }
 
-
 function create_database_header_table() {
     return "                               <thead class=\"border-b-2 border-orange-400\">\n" +
         "                                    <tr>\n" +
@@ -110,7 +105,6 @@ function create_database_header_table() {
         "                                    </tr>\n" +
         "                                    </thead>\n";
 }
-
 
 function create_database_table_body_row(database) {
     const cfg = defaultTheme.mobile.databases;
@@ -147,7 +141,6 @@ function create_mobile_databases(databases) {
         "                </div>" : "";
 }
 
-
 function create_sgwGroup(sgwGroupInstances, visibleGroups, position) {
     let syncGatewayInstances = "";
     let cfg = defaultTheme.mobile.groups[position % defaultTheme.mobile.groups.length];
@@ -171,10 +164,10 @@ function create_sgwGroup(sgwGroupInstances, visibleGroups, position) {
         "</div>";
 }
 
-
-
 function create_version(version) {
     return version ? "<div class=\"flex flex-row-reverse \">" +
         "    <span class=\"" + defaultTheme.mobile.version.color + " border-white border-4 rounded-xl text-xs text-white font-bold mx-2 px-2 mb-0 -mt-4 py-0\">v" + version + "</span>" +
         "</div>" : "";
 }
+
+export { create_mobile }

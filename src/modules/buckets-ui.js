@@ -24,10 +24,18 @@ function get_connectors(data) {
     return connectors;
 }
 
+function create_cell_span(value, color) {
+    return value? "        <span class=\"px-2 py-1 text-xs text-white font-bold " + color + " rounded-xl shadow-400\">" + value + "</span>\n" : "--";
+}
+
+function format_ratio(data) {
+    return data ? data+" % ":data;
+}
+
 function create_grid_body_row(data) {
     let type = data.type ? data.type : "default";
     let cfg = get_bucket_config(type);
-    let others = [data.type === "total" ? "bg-gray-800" : "bg-gray-400", data.type === "total" ? "bg-gray-800" : "bg-amber-400", "bg-orange-400", "bg-yellow-800"];
+    let columnColors = [data.type === "total" ? "bg-gray-800" : "bg-gray-400", data.type === "total" ? "bg-gray-800" : "bg-amber-400", "bg-orange-400", "bg-yellow-800"];
 
     let replicas = data.replicas ? data.replicas : "--";
     let total = "";
@@ -48,13 +56,16 @@ function create_grid_body_row(data) {
         "      </div>\n" +
         "    </div>" +
         "    <div class=\"grid grid-nowrap text-xs text-gray-900 break-normal\">\n" +
-        "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[0] + " rounded-xl shadow-400\">" + format_mb(data.quota) + "</span>\n" +
+        // "        <span class=\"px-2 py-1 text-xs text-white font-bold " + columnColors[0] + " rounded-xl shadow-400\">" + format_mb(data.quota) + "</span>\n" +
+        create_cell_span(format_mb(data.quota), columnColors[0])+
         "    </div>\n" +
         "    <div class=\"grid grid-nowrap text-xs text-gray-900\">\n" +
-        "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[1] + " rounded-xl shadow-400\">" + format_docs(data.documents) + "</span>\n" +
+       //  "        <span class=\"px-2 py-1 text-xs text-white font-bold " + columnColors[1] + " rounded-xl shadow-400\">" + format_docs(data.documents) + "</span>\n" +
+        create_cell_span(format_docs(data.documents), columnColors[1])+
         "    </div>\n" +
         "    <div class=\"grid grid-nowrap text-xs text-gray-900\">\n" +
-        get_ratio_value(data) +
+        // get_ratio_value(data) +
+        create_cell_span(format_ratio(data.ratio), get_ratio_value(data))+
         "    </div>\n" +
         "    <div class=\"grid grid-nowrap  text-xs text-gray-900 font-bold\">\n" +
         replicas +
@@ -188,46 +199,53 @@ function create_grid_scopes(data, cfg = defaultTheme.cluster.buckets.default) {
 function get_ratio_value(data) {
     let ratio = data.ratio ? data.ratio : 0;
     let statusLevelColor;
-    switch (Math.round(ratio / 10)) {
-        case 0:
-        case 1:
-        case 2:
-            statusLevelColor = "bg-red-400";
-            break;
-        case 3:
-            statusLevelColor = "bg-red-300";
-            break;
-        case 4:
-            statusLevelColor = "bg-red-200";
-            break;
-        case 5:
-            statusLevelColor = "bg-orange-400";
-            break;
-        case 6:
-            statusLevelColor = "bg-orange-300";
-            break;
-        case 7:
-            statusLevelColor = "bg-orange-200";
-            break;
-        case 8:
-            statusLevelColor = "bg-green-200";
-            break;
-        case 9:
-            statusLevelColor = "bg-green-300";
-            break;
-        case 10:
-            statusLevelColor = "bg-green-400";
-            break;
-        default:
-            statusLevelColor = " bg-green-400 ";
-            break;
+    if (data.type === "magma") {
+        // Magma buckets works with a minimum of 2% of Memory Resident Ratio
+        statusLevelColor = ratio < 2 ? "bg-red-200" : "bg-green-400";
+    } else {
+        switch (Math.round(ratio / 10)) {
+            case 0:
+            case 1:
+            case 2:
+                statusLevelColor = "bg-red-400";
+                break;
+            case 3:
+                statusLevelColor = "bg-red-300";
+                break;
+            case 4:
+                statusLevelColor = "bg-red-200";
+                break;
+            case 5:
+                statusLevelColor = "bg-orange-400";
+                break;
+            case 6:
+                statusLevelColor = "bg-orange-300";
+                break;
+            case 7:
+                statusLevelColor = "bg-orange-200";
+                break;
+            case 8:
+                statusLevelColor = "bg-green-200";
+                break;
+            case 9:
+                statusLevelColor = "bg-green-300";
+                break;
+            case 10:
+                statusLevelColor = "bg-green-400";
+                break;
+            default:
+                statusLevelColor = " bg-green-400 ";
+                break;
+        }
     }
 
-    return (data.ratio ?
+    //TODO replace per create_cell_span
+    return statusLevelColor;
+      /* (data.ratio ?
         "        <span class=\"px-2 py-1 text-xs font-bold " + statusLevelColor + " rounded-xl shadow-400\">" + data.ratio + " %</span>\n" :
         "        <div class=\"text-xs text-gray-900 font-bold text-center\">\n" +
         "          --\n" +
-        "        </div>\n")
+        "        </div>\n")*/
 }
 
 export { create_buckets }

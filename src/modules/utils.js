@@ -49,14 +49,17 @@ function normalize(name, maxLength) {
 }
 
 function format_mb(megabytes, decimals) {
-    return format_number(megabytes, 1024, ['MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'], decimals)
+    return format_number(megabytes, 1024, ['MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'], decimals);
 }
 
 function format_docs(docs, decimals) {
-    return format_number(docs, 1000, ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'], decimals)
+    return format_number(docs, 1000, ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'], decimals);
 }
 
 function format_number(size, base, sizes, decimals = 2) {
+    // skip undefined values
+    if (!size) return size;
+    // return 0 value
     if (size === 0)
         return '0 ' + sizes[0];
 

@@ -109,6 +109,10 @@ const editor = new JSONEditor(container, options);
 editor.set(data);
 ```
 * use mockData.js
+* tree folder
+
+  ![](tree_folder.png)
+  
 * npm run buld
 * add "build": "webpack" in the package.json in scripts section
 * npx webpack serve

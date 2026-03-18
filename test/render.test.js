@@ -196,6 +196,7 @@ test("render_cluster_html supports overriding the asset root", () => {
 
 test("distributed stylesheet is scoped and uses prefixed renderer classes", () => {
   assert.match(scopedCss, /\.cb-topology-renderer\{line-height:1\.5/);
+  assert.match(scopedCss, /\.cb-topology-renderer\{\s*isolation:\s*isolate;\s*\}/);
   assert.match(scopedCss, /\.cb-topology-renderer \*,\.cb-topology-renderer :after,\.cb-topology-renderer :before\{/);
   assert.match(scopedCss, /\.cb-topology-renderer \.cb-tu-flex\{/);
   assert.match(scopedCss, /\.cb-topology-renderer \.cb-tu-px-6\{[^}]*padding-left:1\.5rem;[^}]*padding-right:1\.5rem;?/s);

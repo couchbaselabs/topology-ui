@@ -1,3 +1,7 @@
+.cb-topology-renderer {
+  isolation: isolate;
+}
+
 .cb-tr-mobile-network {
   display: flex;
   flex-direction: column;

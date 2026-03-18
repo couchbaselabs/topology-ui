@@ -85,6 +85,29 @@ const defaultRenderOptions = {
 
 let activeRenderOptions = defaultRenderOptions;
 
+function has_items(data) {
+    return Array.isArray(data) && data.length > 0;
+}
+
+function has_server_topology(data) {
+    return !!(data && (
+        has_items(data.serverGroups) ||
+        data.name ||
+        data.version ||
+        data.resources
+    ));
+}
+
+function has_mobile_topology(data) {
+    return !!(data && (
+        has_items(data.groups) ||
+        has_items(data.databases) ||
+        has_items(data.clients) ||
+        data.publicAddress ||
+        data.version
+    ));
+}
+
 function normalize_asset_root(root) {
     if (!root) {
         return defaultRenderOptions.assetRoot;
@@ -180,6 +203,9 @@ function create_node_service(service) {
 }
 
 function add_node_services(services) {
+    if (!has_items(services)) {
+        return "";
+    }
     let servicesDisplay = ""
     services.forEach(serv => servicesDisplay += create_node_service(serv))
     return "<div class=\"flex-row text-xs font-bold \">" +
@@ -219,6 +245,9 @@ function create_server_group(sg, groupsVisible, position) {
 }
 
 function create_server_groups(serverGroups) {
+    if (!has_items(serverGroups)) {
+        return "";
+    }
 
     let groupsVisible = serverGroups.length > 1;
     let serverGroupsDiv = "";
@@ -391,7 +420,6 @@ function create_svg_icon(src) {
 }
 
 function create_connector_icon(data) {
-    console.log("connector: ", data)
     return create_svg_icon(get_asset_path("connector-" + data + ".svg"));
 }
 
@@ -409,7 +437,6 @@ function create_grid_body_row(data) {
     let type = data.type ? data.type : "default";
     let cfg = get_bucket_config(type);
     let others = [data.type === "total" ? "bg-gray-800" : "bg-gray-400", data.type === "total" ? "bg-gray-800" : "bg-amber-400", "bg-orange-400", "bg-yellow-800"];
-    console.log("bucket config: ", type, JSON.stringify(cfg));
     let replicas = data.replicas ? data.replicas : "--";
     let total = "";
     let scopes = "";
@@ -452,6 +479,9 @@ function create_grid_body_row(data) {
 }
 
 function create_grid_body(data) {
+    if (!has_items(data)) {
+        return "";
+    }
     let body = "";
     data.forEach(b => body += create_grid_body_row(b));
     return body;
@@ -477,7 +507,7 @@ function create_grid_summary(data) {
 }
 
 function create_buckets_grid_table(data) {
-    return data ?
+    return has_items(data) ?
         "<div class=\"grid grid-cols-1 shadow-sm m-4 \">" +
         create_grid_header() +
         create_grid_body(data) +
@@ -487,7 +517,7 @@ function create_buckets_grid_table(data) {
 }
 
 function create_buckets(buckets) {
-    return buckets ?
+    return has_items(buckets) ?
         "     <div class=\"flex flex-col flex-nowrap\">\n " +
         create_buckets_grid_table(buckets) +
         "     </div> "
@@ -499,7 +529,9 @@ function create_sgwGroup(sgwGroupInstances, visibleGroups, position) {
     let cfg = defaultTheme.mobile.groups[position % defaultTheme.mobile.groups.length];
     let sgName = sgwGroupInstances.name;
 
-    sgwGroupInstances.instances.forEach(n => sgws += create_sgwInstance(n));
+    if (has_items(sgwGroupInstances.instances)) {
+        sgwGroupInstances.instances.forEach(n => sgws += create_sgwInstance(n));
+    }
 
     return visibleGroups ? "<div  class=\"my-2 border-2 " + cfg.border + "  border-dotted \">" +
         "          <div class=\"-my-2 flex-row align-center\">" +
@@ -540,11 +572,15 @@ function create_sgwInstance(sgwData) {
 }
 
 function create_sgwGroups(data) {
+    if (!data) {
+        return "";
+    }
     let versionBorder = data.version ? "border-b-2 " + defaultTheme.mobile.version.lineColor : "";
     let sgwGroups = "";
     let position = 0;
-    const visibleGroups = data.groups.length > 1;
-    data.groups.forEach(g => {
+    const groups = has_items(data.groups) ? data.groups : [];
+    const visibleGroups = groups.length > 1;
+    groups.forEach(g => {
         sgwGroups += create_sgwGroup(g, visibleGroups, position);
         position++;
     });
@@ -581,6 +617,10 @@ function create_database_table_body_row(database) {
 }
 
 function create_database_table_body(databases) {
+    if (!has_items(databases)) {
+        return "                                    <tbody class=\"bg-white\">\n" +
+            "                                    </tbody>\n";
+    }
     let body = "";
     databases.forEach(b => body += create_database_table_body_row(b));
     return "                                    <tbody class=\"bg-white\">\n" +
@@ -591,7 +631,7 @@ function create_database_table_body(databases) {
 
 function create_mobile_databases(databases) {
 
-    return databases ? "  <div class=\"mt-4\" >\n" +
+    return has_items(databases) ? "  <div class=\"mt-4\" >\n" +
         "                    <div class=\"flex flex-col\">\n" +
         "                        <div class=\"w-full\">\n" +
         "                            <div>\n" +
@@ -618,7 +658,6 @@ function create_os_icons(data) {
             icons +
             "      </div>";
     }
-    console.log('salida: ', output);
     return output;
 }
 
@@ -655,10 +694,10 @@ function create_mobile_clients(data) {
 
 function create_load_balancer(data) {
     const cfg = defaultTheme.mobile.network;
-
+    const publicAddress = data && data.publicAddress ? data.publicAddress : "";
 
     return "<div class=\"mx-2 flex-column\">" +
-        "<div class=\"text-xs " + cfg.urlColor + " text-right \"><p>" + data.publicAddress + "</p></div>" +
+        "<div class=\"text-xs " + cfg.urlColor + " text-right \"><p>" + publicAddress + "</p></div>" +
         "<div class=\"z-10 border-b-2 border-black-400 border-dashed\"></div>" +
         "<div class=\"grid justify-items-center \">" +
         "   <div class=\"-my-3 mx-10 px-6 py-1 text-xs " + cfg.textColor + " font-bold " + cfg.color + " rounded-xl shadow-400\"><i class=\"" + cfg.icon + "\"><span class='px-2'>" + cfg.displayText + "</span></i></div>\n" +
@@ -673,7 +712,7 @@ function create_version(version) {
 }
 
 function create_mobile(data) {
-    return data ? "<div class=\"flex-column mb-2 -pb-2\">" +
+    return has_mobile_topology(data) ? "<div class=\"flex-column mb-2 -pb-2\">" +
         create_mobile_clients(data.clients) +
         create_load_balancer(data) +
         "<div class=\"mx-2 -my-2 flex flex-row font-bold font-bold text-red-700 text-center text-xs \">" +
@@ -689,27 +728,28 @@ function create_apps(data) {
 }
 
 function create_server_topology(data) {
-    return   data ?      "   <div class=\"m-4 flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
+    return has_server_topology(data) ? "   <div class=\"m-4 flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
         add_cluster_name(data.name) +
         create_server_groups(data.serverGroups) +
         create_resources(data.resources) +
         create_cluster_version(data.version) +
-        "      </div>" : "" ;
+        "      </div>" : "";
 }
 
 function render_cluster_html(data, options) {
+    const topology = data || {};
     return with_render_options(options, () => "<div class=\"flex flex-col justify-content-center\">" +
         "<div class=\"flex flex-row justify-content-center items-center \">" +
-        create_mobile(data.mobile) +
-        create_apps(data.applications) +
+        create_mobile(topology.mobile) +
+        create_apps(topology.applications) +
         "</div>" +
         "<div class=\"flex flex-row auto-rows-auto\">" +
         "  <div class=\"flex-col align-center grow \">" +
-        create_server_topology(data)+
+        create_server_topology(topology) +
         "  </div>" +
         "  <div class=\"flex flex-col flex-nowrap  shrink-0 \">" +
         "   <div class=\"flex flex-row flex-nowrap  \">" +
-        create_buckets(data.buckets) +
+        create_buckets(topology.buckets) +
         "      </div>" +
         "  </div>" +
         "</div>" +

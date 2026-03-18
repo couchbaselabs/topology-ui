@@ -108,3 +108,48 @@ test("render_cluster_html supports overriding the asset root", () => {
 
   assert.match(html, /\/static\/topology-ui\/images\/nodebg\.png/);
 });
+
+test("renderTopology renders buckets without requiring serverGroups", () => {
+  const html = renderTopology({
+    buckets: [
+      {
+        name: "bucket-only",
+        quota: 1024,
+        documents: 5000,
+        ratio: 75,
+        replicas: 1,
+        connectors: ["mobile"]
+      }
+    ]
+  });
+
+  assert.match(html, /bucket-only/);
+  assert.match(html, /connector-mobile\.svg/);
+  assert.doesNotMatch(html, /undefined/);
+});
+
+test("renderTopology renders mobile without requiring cluster data", () => {
+  const html = renderTopology({
+    mobile: {
+      version: "3.1.0",
+      publicAddress: "https://mobile.example.com",
+      groups: [
+        {
+          name: "Group 1",
+          instances: [
+            {
+              nodeIp: "10.0.0.10",
+              name: "SG 1"
+            }
+          ]
+        }
+      ],
+      databases: [{ name: "db1" }]
+    }
+  });
+
+  assert.match(html, /https:\/\/mobile\.example\.com/);
+  assert.match(html, /SG 1/);
+  assert.match(html, /db1/);
+  assert.doesNotMatch(html, /TypeError/);
+});

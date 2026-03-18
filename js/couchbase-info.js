@@ -210,7 +210,7 @@ function normalize(name, maxLength) {
 function add_node_name(name) {
     let hidden = name ? "" : "hidden";
     const displayName = normalize(name, 9);
-    return "   <p class=\"flex-row text-xs text-gray-400 font-bold " + hidden + " \">" + displayName + "</p>"
+    return "   <div class=\"flex-row text-xs text-gray-400 font-bold " + hidden + " \">" + displayName + "</div>"
 }
 
 function create_resources(resources) {
@@ -225,8 +225,8 @@ function create_resources(resources) {
     }
     return "                                        <div class=\"align-center " + hidden + " \">\n" +
         "                                            <div class=\" " + cfg + " rounded-lg text-xs font-bold mx-2 px-2 \">\n" +
-        "                                                <p>" + memory + " GB</p>" +
-        "                                                <p> " + cpus + " CPUs</p>" +
+        "                                                <div>" + memory + " GB</div>" +
+        "                                                <div> " + cpus + " CPUs</div>" +
         "                                            </div>\n" +
         "                                        </div>\n";
     /* return " <div class=\"-my-6 align-center " + hidden + "\">" +
@@ -245,7 +245,7 @@ function add_node_image(resources) {
 }
 
 function create_node_service(service) {
-    return "<p>" + service + "</p>"
+    return "<div>" + service + "</div>"
 }
 
 function add_node_services(services) {
@@ -339,13 +339,13 @@ function get_bucket_config(type) {
 
 function create_grid_header() {
     return "<div class=\"grid grid-cols-8 border-b-2 border-orange-400 text-xs text-gray-500 text-center font-bold p-1 mb-1 grid-nowrap\"> \n " +
-        "   <div class='col-span-2'><p>Buckets</p></div> \n " +
-        "   <div><p>Quota</p></div> \n " +
-        "   <div><p>#docs</p></div> \n " +
-        "   <div><p>%Resident</p></div> \n " +
-        "   <div><p>Replicas</p></div> \n " +
-        "   <div><p>Connectors</p></div> \n " +
-        "   <div><p>TTL</p></div> \n " +
+        "   <div class='col-span-2'><span>Buckets</span></div> \n " +
+        "   <div><span>Quota</span></div> \n " +
+        "   <div><span>#docs</span></div> \n " +
+        "   <div><span>%Resident</span></div> \n " +
+        "   <div><span>Replicas</span></div> \n " +
+        "   <div><span>Connectors</span></div> \n " +
+        "   <div><span>TTL</span></div> \n " +
         "</div> \n ";
 }
 
@@ -360,13 +360,13 @@ function create_collection(data, cfg = defaultTheme.cluster.buckets.default) {
         "      </div>\n" +
         "   </div>" +
         "   <div class=\"grid col-start-4 grid-nowrap content-center justify-items-center px-2 text-center text-xs text-gray-300 \">" +
-        "       <p> " + ndocs + "</p>" +
+        "       <span> " + ndocs + "</span>" +
         "   </div>" +
         "   <div class=\"grid col-start-7 grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center text-xs text-gray-400 font-bold\">" +
         connectors +
         "   </div>" +
         "   <div class=\"grid col-start-8 grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center text-xs text-gray-400 font-bold\">" +
-        "       <p> " + ttl + "</p>" +
+        "       <span> " + ttl + "</span>" +
         "   </div>"
         : "";
 }
@@ -384,7 +384,7 @@ function create_grid_scope_body(data, cfg = defaultTheme.cluster.buckets.default
         marginBottom = "";
         scopeIcon = cfg.scopes.iconExtend;
         // TODO add total collections per scope
-        total = "<p class=\" px-1 bg-white rounded-full text-blue-400 \">" + data.collections.length + " </p>";
+        total = "<span class=\" px-1 bg-white rounded-full text-blue-400 \">" + data.collections.length + " </span>";
     }
 
     return "<div class='grid grid-cols-8 " + cfg.scopes.color + " rounded-md shadow-xs ml-1 " + marginBottom + "'>" +
@@ -392,7 +392,7 @@ function create_grid_scope_body(data, cfg = defaultTheme.cluster.buckets.default
         "        " + create_fontawesome_label("pl-1 " + scopeIcon, data.name + "   ") +
         "   </div>" +
         "   <div class=\"grid col-start-4 grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center text-xs text-gray-400 font-bold\">" +
-        "       <p> " + ndocs + "</p>" +
+        "       <span> " + ndocs + "</span>" +
         "   </div>" +
         "</div>"
         + collections;
@@ -610,11 +610,11 @@ function create_svg(src, height = 50, width = 90) {
 
 function create_instance(data, svg) {
     return "                          <div class=\"flex-row max-w-100 py-2 my-0\">\n" +
-        "                                    <p class=\"flex-row text-xs text-gray-400 font-bold\">" + data.nodeIp + "</p>\n" +
+        "                                    <div class=\"flex-row text-xs text-gray-400 font-bold\">" + data.nodeIp + "</div>\n" +
         svg +
         create_resources(data.resources) +
         "                                    <div class=\"flex-row\">\n" +
-        "                                        <p>" + data.name + "</p>\n" +
+        "                                        <div>" + data.name + "</div>\n" +
         "                                    </div>\n" +
         "                                </div>\n";
 }
@@ -703,7 +703,7 @@ function create_os_icons(data) {
 function create_mobile_client(data) {
     let showResources = data.languages || data.versions ? "" : "hidden";
     return "                          <div class=\"flex-column max-w-100 py-2 my-0 space-y-0\">\n" +
-        "                                    <p class=\"text-xs text-gray-400 font-bold text-center\">" + (data.name ? data.name : "") + "</p>\n" +
+        "                                    <div class=\"text-xs text-gray-400 font-bold text-center\">" + (data.name ? data.name : "") + "</div>\n" +
         "                                    <div class=\"px-2 flex flex-row\">" +
         "                                            <div class=\"m-1 " + (data.total ? "" : "hidden") + "\"><span class=\"p-1 rounded-full bg-black text-white font-bold text-xs\">" + data.total + "x</span></div>" +
         "                                            <svg width=\"30\" height=\"40\">\n" +
@@ -713,7 +713,7 @@ function create_mobile_client(data) {
         "                                    </div>" +
         "                                    <div class=\"align-center -top-4 " + showResources + " \">\n" +
         "                                            <div class=\"-top-16 bg-red-600 z-10 rounded-lg text-xs text-white font-bold mx-2 px-2 my-0 py-0 text-center\">\n" +
-        "                                                <p>lite " + data.language + ":" + data.versions + "</p>" +
+        "                                                <div>lite " + data.language + ":" + data.versions + "</div>" +
         "                                            </div>\n" +
         "                                    </div>\n" +
         "                                </div>\n";

@@ -76,6 +76,10 @@ function assertNoHostCollisionUtilityTokens(html) {
   assert.deepEqual(collisions, [], `host-collision utility classes leaked into output: ${collisions.join(", ")}`);
 }
 
+function assertNoLayoutParagraphTags(html) {
+  assert.doesNotMatch(html, /<p\b/i, "renderer output should not contain layout-only paragraph tags");
+}
+
 test("parseTopologySource accepts object literal markdown payloads", () => {
   const topology = parseTopologySource(`
     {
@@ -126,6 +130,7 @@ test("renderTopology emits namespaced host-safe markup", () => {
   assert.match(html, /cb \.\.\. 0000/);
   assert.match(html, /images\/nodebg\.png/);
   assert.doesNotMatch(html, /<style/);
+  assertNoLayoutParagraphTags(html);
   assertNamespacedRendererClasses(html);
   assertNoHostCollisionUtilityTokens(html);
 });
@@ -139,6 +144,7 @@ test("renderTopologyBlock keeps the same host-safe renderer output shape", () =>
   assert.doesNotMatch(html, /<style/);
   assert.match(html, /node1/);
   assert.match(html, /cb-tu-flex/);
+  assertNoLayoutParagraphTags(html);
   assertNamespacedRendererClasses(html);
   assertNoHostCollisionUtilityTokens(html);
 });
@@ -158,6 +164,7 @@ test("mountTopology updates container HTML with the host-safe renderer", () => {
   assert.match(container.innerHTML, /cb-demo-2/);
   assert.match(container.innerHTML, /node2/);
   assert.match(container.innerHTML, /class="cb-topology-renderer"/);
+  assertNoLayoutParagraphTags(container.innerHTML);
   assertNamespacedRendererClasses(container.innerHTML);
   assertNoHostCollisionUtilityTokens(container.innerHTML);
 });
@@ -170,6 +177,7 @@ test("legacy create_cluster export remains available", () => {
   });
 
   assert.match(container.innerHTML, /cb-demo/);
+  assertNoLayoutParagraphTags(container.innerHTML);
   assertNamespacedRendererClasses(container.innerHTML);
 });
 
@@ -182,6 +190,7 @@ test("render_cluster_html supports overriding the asset root", () => {
   });
 
   assert.match(html, /\/static\/topology-ui\/images\/nodebg\.png/);
+  assertNoLayoutParagraphTags(html);
   assertNamespacedRendererClasses(html);
 });
 
@@ -222,6 +231,7 @@ test("renderTopology renders buckets without requiring serverGroups", () => {
   assert.match(html, /connector-mobile\.svg/);
   assert.match(html, /cb-tu-grid cb-tu-grid-cols-1 cb-tu-shadow-sm cb-tu-m-4/);
   assert.doesNotMatch(html, /undefined/);
+  assertNoLayoutParagraphTags(html);
   assertNamespacedRendererClasses(html);
 });
 
@@ -256,12 +266,14 @@ test("renderTopology renders mobile with host-safe load balancer and database bl
   assert.ok(html.indexOf("cb-tr-mobile-network-address") < html.indexOf("cb-tr-mobile-network-pill"));
   assert.doesNotMatch(html, /<table/i);
   assert.doesNotMatch(html, /TypeError/);
+  assertNoLayoutParagraphTags(html);
   assertNamespacedRendererClasses(html);
   assertNoHostCollisionUtilityTokens(html);
 });
 
 test("hostile host fixture selectors do not target renderer utility classes or tables", () => {
   const hostileCss = `
+    .contents p { padding: 1rem 0 0; }
     .layout .flex { padding: 12px; }
     .v-application .px-6 { padding-left: 24px !important; padding-right: 24px !important; }
     .v-application .py-1 { padding-top: 4px !important; padding-bottom: 4px !important; }
@@ -319,6 +331,7 @@ test("hostile host fixture selectors do not target renderer utility classes or t
   assert.match(fixture, /class="cb-topology-renderer"/);
   assert.match(fixture, /cb-tr-mobile-network-pill/);
   assert.match(fixture, /cb-tr-mobile-database-pill/);
+  assertNoLayoutParagraphTags(html);
   assertNamespacedRendererClasses(html);
   assertNoHostCollisionUtilityTokens(html);
   assert.doesNotMatch(html, /<table/i);

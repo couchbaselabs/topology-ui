@@ -1,5 +1,7 @@
-# JavaScript Couchbase Topology UI Viewer using Tailwind CSS
-Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluster Topology, Services and Buckets details in your preferrable html browser: 
+# JavaScript Couchbase Topology UI Viewer
+Couchbase Topology UI Viewer is a JavaScript library for rendering Couchbase cluster, mobile, and bucket topology details in the browser.
+
+The package is designed to be safe to embed inside host applications that already ship their own CSS frameworks or content styling, including Vuetify apps, CMS platforms, and documentation sites. Load the packaged stylesheet once, call `renderTopology(...)`, and no host-specific compatibility CSS should be necessary.
 
 ![overview](docs/assets/overview-mobile.png)
 
@@ -13,7 +15,7 @@ npm install @couchbaselabs/topology-ui
 
 For developers working from this repository, `npm install` also runs the package `prepare` step and generates the bundled stylesheet in `dist/`.
 
-### Dependencies
+### Stylesheet
 
 ```
 <!DOCTYPE html>
@@ -29,14 +31,11 @@ For developers working from this repository, `npm install` also runs the package
 </head>
 ```
 
-| Library | Required | Description |
-| :--- | :--- | :--- |
-| [**Tailwind CSS**](https://tailwindcss.com/blog/tailwindcss-v3) | YES | helps you to rapidly build modern websites without ever leaving your HTML. A utility-first CSS framework packed with classes like flex, pt-4, text-center and rotate-90 that can be composed to build any design, directly in your markup.| 
-| [**Font-Awesome**](https://fontawesome.com) | NO* | The easiest way to get icons on your website is with a Kit. It's your very own custom version of Font Awesome, all bundled up with only the icons, tools, and settings you need. |
-| [**JsonEditor**](https://github.com/josdejong/jsoneditor) | NO | is a web-based tool to view, edit, format, and validate JSON. It has various modes such as a tree editor, a code editor, and a plain text editor. The editor can be used as a component in your own web application. The library can be loaded as CommonJS module, AMD module, or as a regular javascript file.|
+The package bundles the required Tailwind-generated rules and Font Awesome icon styles into `dist/topology-ui.css`, so consumers do not need to add Tailwind CSS or Font Awesome separately.
 
-- **Tailwind CSS** and **Font-Awesome** are used by some components, but consumers do not need to include them separately because the required runtime styling dependencies are already bundled in the package stylesheet.
-- The distributed stylesheet is already scoped to the renderer root, so it is safe to load globally in embedded host apps such as Wiki.js.
+- The stylesheet is scoped to the renderer root, `.cb-topology-renderer`.
+- Internal renderer classes are library-owned and prefixed, so host utility classes like `flex`, `px-6`, `py-1`, `text-right`, and similar framework helpers do not collide with the topology markup.
+- The default package CSS is the only stylesheet consumers should need.
 - `jsoneditor` is not included and remains demo-only.
 
 ### Use As A Dependency
@@ -51,7 +50,7 @@ const data = {
 const html = topologyUi.renderTopology(data);
 ```
 
-`renderTopology()` returns markup wrapped in the library root container (`.cb-topology-renderer`), so the packaged stylesheet only affects the rendered topology block.
+`renderTopology()` returns markup wrapped in the library root container (`.cb-topology-renderer`), and the packaged stylesheet targets only that rendered topology block.
 
 Or if you already have a DOM element:
 
@@ -71,19 +70,19 @@ const data = topologyUi.parseTopologySource(rawInput);
 const html = topologyUi.renderTopology(data);
 ```
 
-The packaged renderer preserves the original output and still expects the same image assets. By default image references resolve to `images/...`. You can override that with `assetRoot`:
+The packaged renderer preserves the public JavaScript API and visual output while emitting host-safe, namespaced internal classes. By default image references resolve to `images/...`. You can override that with `assetRoot`:
 
 ```
 const html = topologyUi.renderTopology(data, { assetRoot: "/assets/topology-ui/images" });
 ```
 
-Best-practice usage is to load a single stylesheet from the package:
+Best-practice usage is still simple: install the package, load one stylesheet, and render the returned HTML.
 
 ```
 <link href="./dist/topology-ui.css" rel="stylesheet"/>
 ```
 
-In an embedded host application you can install the package, load that stylesheet once, and inject the returned HTML directly:
+In an embedded host application you can load that stylesheet once and inject the returned HTML directly:
 
 ```
 const topologyUi = require("@couchbaselabs/topology-ui");

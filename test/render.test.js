@@ -16,6 +16,66 @@ const {
 
 const scopedCss = fs.readFileSync(path.join(__dirname, "..", "dist", "topology-ui.css"), "utf8");
 
+const hostileUtilityTokens = [
+  "flex",
+  "flex-row",
+  "flex-col",
+  "flex-column",
+  "flow-column",
+  "flex-wrap",
+  "flex-nowrap",
+  "justify-content-center",
+  "justify-center",
+  "align-center",
+  "align-left",
+  "text-right",
+  "text-center",
+  "w-full",
+  "max-w-100",
+  "grid-nowrap",
+  "px-6",
+  "py-1",
+  "px-2",
+  "py-2",
+  "mx-2",
+  "mx-10",
+  "mx-8",
+  "my-0",
+  "my-2",
+  "my-4",
+  "gap-x-4",
+  "gap-y-3",
+  "space-x-1",
+  "space-y-0"
+];
+
+function extractClassTokens(html) {
+  const tokens = new Set();
+
+  for (const match of html.matchAll(/\bclass=(["'])(.*?)\1/g)) {
+    for (const token of match[2].split(/\s+/).filter(Boolean)) {
+      tokens.add(token);
+    }
+  }
+
+  return tokens;
+}
+
+function assertNamespacedRendererClasses(html) {
+  const unexpected = [...extractClassTokens(html)]
+    .filter((token) => !/^(cb-topology-renderer|cb-tu-[^\s]+|cb-tr-[^\s]+|fa(?:[bdrslt])?|fa-[A-Za-z0-9-]+)$/.test(token))
+    .sort();
+
+  assert.deepEqual(unexpected, [], `unexpected non-namespaced renderer classes: ${unexpected.join(", ")}`);
+}
+
+function assertNoHostCollisionUtilityTokens(html) {
+  const tokens = extractClassTokens(html);
+  const collisions = hostileUtilityTokens.filter((token) => tokens.has(token));
+
+  assert.deepEqual(collisions, [], `host-collision utility classes leaked into output: ${collisions.join(", ")}`);
+}
+
 test("parseTopologySource accepts object literal markdown payloads", () => {
   const topology = parseTopologySource(`
     {
@@ -40,7 +100,7 @@ test("parseTopologySource accepts object literal markdown payloads", () => {
   assert.equal(topology.serverGroups[0].nodes[0].services[1], "Query");
 });
 
-test("renderTopology preserves the original renderer markup", () => {
+test("renderTopology emits namespaced host-safe markup", () => {
   const html = renderTopology({
     name: "cb-demo",
     version: "6.6.3",
@@ -61,14 +121,16 @@ test("renderTopology preserves the original renderer markup", () => {
   });
 
   assert.match(html, /class="cb-topology-renderer"/);
-  assert.match(html, /class="cb-topology-renderer"><div class="flex flex-col justify-content-center">/);
-  assert.match(html, /border-red-700/);
+  assert.match(html, /class="cb-topology-renderer"><div class="cb-tu-flex cb-tu-flex-col cb-tu-justify-content-center">/);
+  assert.match(html, /cb-tu-border-red-700/);
   assert.match(html, /cb \.\.\. 0000/);
   assert.match(html, /images\/nodebg\.png/);
   assert.doesNotMatch(html, /<style/);
+  assertNamespacedRendererClasses(html);
+  assertNoHostCollisionUtilityTokens(html);
 });
 
-test("renderTopologyBlock is the same HTML renderer output", () => {
+test("renderTopologyBlock keeps the same host-safe renderer output shape", () => {
   const html = renderTopologyBlock(`{
     name: "cb-demo",
     serverGroups: [{ name: "sg1", nodes: [{ name: "node1", services: ["Data"] }] }]
@@ -76,9 +138,12 @@ test("renderTopologyBlock is the same HTML renderer output", () => {
 
   assert.doesNotMatch(html, /<style/);
   assert.match(html, /node1/);
+  assert.match(html, /cb-tu-flex/);
+  assertNamespacedRendererClasses(html);
+  assertNoHostCollisionUtilityTokens(html);
 });
 
-test("mountTopology updates container HTML with the original renderer", () => {
+test("mountTopology updates container HTML with the host-safe renderer", () => {
   const container = { innerHTML: "" };
 
   mountTopology(container, {
@@ -93,6 +158,8 @@ test("mountTopology updates container HTML with the original renderer", () => {
   assert.match(container.innerHTML, /cb-demo-2/);
   assert.match(container.innerHTML, /node2/);
   assert.match(container.innerHTML, /class="cb-topology-renderer"/);
+  assertNamespacedRendererClasses(container.innerHTML);
+  assertNoHostCollisionUtilityTokens(container.innerHTML);
 });
 
 test("legacy create_cluster export remains available", () => {
@@ -103,6 +170,7 @@ test("legacy create_cluster export remains available", () => {
   });
 
   assert.match(container.innerHTML, /cb-demo/);
+  assertNamespacedRendererClasses(container.innerHTML);
 });
 
 test("render_cluster_html supports overriding the asset root", () => {
@@ -114,13 +182,24 @@ test("render_cluster_html supports overriding the asset root", () => {
   });
 
   assert.match(html, /\/static\/topology-ui\/images\/nodebg\.png/);
+  assertNamespacedRendererClasses(html);
 });
 
-test("distributed stylesheet is scoped to the topology root", () => {
+test("distributed stylesheet is scoped and uses prefixed renderer classes", () => {
   assert.match(scopedCss, /\.cb-topology-renderer\{line-height:1\.5/);
   assert.match(scopedCss, /\.cb-topology-renderer \*,\.cb-topology-renderer :after,\.cb-topology-renderer :before\{/);
-  assert.match(scopedCss, /\.cb-topology-renderer \.flex\{display:flex/);
+  assert.match(scopedCss, /\.cb-topology-renderer \.cb-tu-flex\{/);
+  assert.match(scopedCss, /\.cb-topology-renderer \.cb-tu-px-6\{[^}]*padding-left:1\.5rem;[^}]*padding-right:1\.5rem;?/s);
+  assert.match(scopedCss, /\.cb-topology-renderer \.cb-tu-py-1\{[^}]*padding-top:\.25rem;[^}]*padding-bottom:\.25rem;?/s);
+  assert.match(scopedCss, /\.cb-topology-renderer \.cb-tu-text-right\{[^}]*text-align:right/s);
+  assert.match(scopedCss, /\.cb-topology-renderer \.cb-tr-mobile-database-pill\{[^}]*display:\s*inline-flex;[^}]*width:\s*auto;/s);
+  assert.match(scopedCss, /\.cb-topology-renderer \.cb-tr-mobile-network-pill\{[^}]*z-index:\s*20;[^}]*display:\s*inline-flex;/s);
   assert.match(scopedCss, /\.cb-topology-renderer \.fa,/);
+  assert.doesNotMatch(scopedCss, /\.npm\\ cb-tu-/);
+  assert.doesNotMatch(scopedCss, /\.cb-topology-renderer \.flex\{/);
+  assert.doesNotMatch(scopedCss, /\.cb-topology-renderer \.px-6\{/);
+  assert.doesNotMatch(scopedCss, /\.cb-topology-renderer \.py-1\{/);
+  assert.doesNotMatch(scopedCss, /\.cb-topology-renderer \.text-right\{/);
   assert.doesNotMatch(scopedCss, /(^|})html\{/);
   assert.doesNotMatch(scopedCss, /(^|})body\{/);
 });
@@ -141,10 +220,12 @@ test("renderTopology renders buckets without requiring serverGroups", () => {
 
   assert.match(html, /bucket-only/);
   assert.match(html, /connector-mobile\.svg/);
+  assert.match(html, /cb-tu-grid cb-tu-grid-cols-1 cb-tu-shadow-sm cb-tu-m-4/);
   assert.doesNotMatch(html, /undefined/);
+  assertNamespacedRendererClasses(html);
 });
 
-test("renderTopology renders mobile without requiring cluster data", () => {
+test("renderTopology renders mobile with host-safe load balancer and database blocks", () => {
   const html = renderTopology({
     mobile: {
       version: "3.1.0",
@@ -167,32 +248,78 @@ test("renderTopology renders mobile without requiring cluster data", () => {
   assert.match(html, /https:\/\/mobile\.example\.com/);
   assert.match(html, /SG 1/);
   assert.match(html, /db1/);
+  assert.match(html, /cb-tr-mobile-network-address/);
+  assert.match(html, /cb-tr-mobile-network-line/);
+  assert.match(html, /cb-tr-mobile-network-pill/);
+  assert.match(html, /cb-tr-mobile-databases-card/);
+  assert.match(html, /cb-tr-mobile-database-pill/);
+  assert.ok(html.indexOf("cb-tr-mobile-network-address") < html.indexOf("cb-tr-mobile-network-pill"));
+  assert.doesNotMatch(html, /<table/i);
   assert.doesNotMatch(html, /TypeError/);
+  assertNamespacedRendererClasses(html);
+  assertNoHostCollisionUtilityTokens(html);
 });
 
-test("render output keeps the original layout structure inside the wrapper", () => {
+test("hostile host fixture selectors do not target renderer utility classes or tables", () => {
+  const hostileCss = `
+    .layout .flex { padding: 12px; }
+    .v-application .px-6 { padding-left: 24px !important; padding-right: 24px !important; }
+    .v-application .py-1 { padding-top: 4px !important; padding-bottom: 4px !important; }
+    .v-main .contents table { border: 1px solid #ddd; width: 100%; background: white; }
+    .v-main .contents table th { background: #f5f5f5; border-bottom: 2px solid #999; }
+    .v-main .contents table tr td:nth-child(even) { background: #fafafa; }
+  `;
+
   const html = renderTopology({
     name: "cb-demo",
     version: "6.6.3",
-    resources: { memory: "128", cpus: "8" },
     serverGroups: [
       {
         name: "serverGroup1",
-        nodes: [{ name: "cb-demo0000", services: ["Data", "Query", "Index"] }]
+        nodes: [{ name: "node1", services: ["Data", "Query"] }]
       }
     ],
     buckets: [
       {
-        name: "mybucket",
+        name: "bucket-only",
         quota: 1024,
         documents: 5000,
         ratio: 75,
-        replicas: 1
+        replicas: 1,
+        connectors: ["mobile"]
       }
-    ]
+    ],
+    mobile: {
+      version: "3.1.0",
+      publicAddress: "https://mobile.example.com",
+      groups: [
+        {
+          name: "Group 1",
+          instances: [{ nodeIp: "10.0.0.10", name: "SG 1" }]
+        }
+      ],
+      databases: [{ name: "db1" }]
+    }
   });
 
-  assert.match(html, /class="cb-topology-renderer"><div class="flex flex-col justify-content-center">/);
-  assert.match(html, /class="m-4 inline-block flex-row border-4 rounded-xl border-red-700/);
-  assert.match(html, /class="grid grid-cols-1 shadow-sm m-4/);
+  const fixture = `
+    <style>${hostileCss}</style>
+    <div class="v-application">
+      <div class="layout">
+        <div class="v-main">
+          <div class="contents">
+            ${html}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  assert.match(fixture, /\.layout \.flex \{ padding: 12px; \}/);
+  assert.match(fixture, /class="cb-topology-renderer"/);
+  assert.match(fixture, /cb-tr-mobile-network-pill/);
+  assert.match(fixture, /cb-tr-mobile-database-pill/);
+  assertNamespacedRendererClasses(html);
+  assertNoHostCollisionUtilityTokens(html);
+  assert.doesNotMatch(html, /<table/i);
 });

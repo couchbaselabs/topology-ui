@@ -1,15 +1,19 @@
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
+const require = createRequire(import.meta.url);
+const { prefixCssSelectorClasses } = require("../lib/class-prefix");
 
 const tailwindCssPath = path.join(rootDir, "dist", "topology-ui.css");
 const fontAwesomeCssPath = path.join(rootDir, "node_modules", "@fortawesome", "fontawesome-free", "css", "all.min.css");
 const fontAwesomeFontsPath = path.join(rootDir, "node_modules", "@fortawesome", "fontawesome-free", "webfonts");
 const distWebfontsPath = path.join(rootDir, "dist", "webfonts");
+const hostSafeCssPath = path.join(rootDir, "build", "host-safe.css");
 const scopeSelector = ".cb-topology-renderer";
 
 function splitSelectors(selectorList) {
@@ -118,7 +122,7 @@ function findBlockEnd(css, startIndex) {
   return css.length - 1;
 }
 
-function scopeCss(css) {
+function scopeCss(css, selectorTransform = (selector) => selector) {
   let output = "";
   let index = 0;
 
@@ -161,7 +165,7 @@ function scopeCss(css) {
       if (/^@(-webkit-)?keyframes/i.test(atRuleHeader) || /^@font-face/i.test(atRuleHeader)) {
         output += `${atRuleHeader}${blockBody}}`;
       } else {
-        output += `${atRuleHeader}${scopeCss(blockBody)}}`;
+        output += `${atRuleHeader}${scopeCss(blockBody, selectorTransform)}}`;
       }
 
       index = blockEnd + 1;
@@ -178,6 +182,7 @@ function scopeCss(css) {
     const blockEnd = findBlockEnd(css, blockStart + 1);
     const declarations = css.slice(blockStart + 1, blockEnd);
     const scopedSelectors = splitSelectors(selectorList)
+      .map(selectorTransform)
       .flatMap(prefixSelector)
       .join(",");
 
@@ -189,9 +194,14 @@ function scopeCss(css) {
 }
 
 const tailwindCss = await readFile(tailwindCssPath, "utf8");
+const hostSafeCss = await readFile(hostSafeCssPath, "utf8");
 const fontAwesomeCss = (await readFile(fontAwesomeCssPath, "utf8"))
   .replace(/\.\.\/webfonts\//g, "./webfonts/");
-const bundledCss = scopeCss(`${tailwindCss}\n${fontAwesomeCss}\n`);
+const bundledCss = [
+  scopeCss(tailwindCss, prefixCssSelectorClasses),
+  scopeCss(hostSafeCss),
+  scopeCss(fontAwesomeCss)
+].join("\n");
 
 await rm(distWebfontsPath, { recursive: true, force: true });
 await mkdir(distWebfontsPath, { recursive: true });

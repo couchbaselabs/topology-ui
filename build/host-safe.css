@@ -1,0 +1,79 @@
+.cb-tr-mobile-network {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cb-tr-mobile-network-address {
+  margin: 0 0 0.25rem;
+  line-height: 1.25;
+}
+
+.cb-tr-mobile-network-address span {
+  display: block;
+  margin: 0;
+}
+
+.cb-tr-mobile-network-line {
+  min-width: 100%;
+}
+
+.cb-tr-mobile-network-pill-wrap {
+  min-width: 100%;
+}
+
+.cb-tr-mobile-network-pill {
+  position: relative;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  width: auto;
+  max-width: 100%;
+}
+
+.cb-tr-mobile-databases {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cb-tr-mobile-databases-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: auto;
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+}
+
+.cb-tr-mobile-databases-header,
+.cb-tr-mobile-databases-body,
+.cb-tr-mobile-database-row {
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.cb-tr-mobile-databases-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: auto;
+  max-width: 100%;
+}
+
+.cb-tr-mobile-database-row {
+  display: flex;
+  width: auto;
+  max-width: 100%;
+}
+
+.cb-tr-mobile-database-pill {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}

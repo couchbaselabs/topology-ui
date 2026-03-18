@@ -1,3 +1,47 @@
+const classPrefixHelpers = typeof require === "function" ? require("../lib/class-prefix") : (() => {
+    const renderRootClassName = "cb-topology-renderer";
+    const rendererUtilityPrefix = "cb-tu-";
+
+    function isFontAwesomeClass(token) {
+        return /^fa([bdrslt])?$/.test(token) || /^fa-[A-Za-z0-9-]+$/.test(token);
+    }
+
+    function isLibraryOwnedClass(token) {
+        return !!token && (
+            token === renderRootClassName ||
+            token.indexOf(rendererUtilityPrefix) === 0 ||
+            token.indexOf("cb-tr-") === 0
+        );
+    }
+
+    function prefixUtilityClassName(token) {
+        return token && !isLibraryOwnedClass(token) && !isFontAwesomeClass(token) ?
+            rendererUtilityPrefix + token :
+            token;
+    }
+
+    function prefixClassList(classList) {
+        return classList
+            .split(/\s+/)
+            .filter(Boolean)
+            .map(prefixUtilityClassName)
+            .join(" ");
+    }
+
+    function prefixHtmlClassAttributes(html) {
+        return html.replace(/\bclass=(["'])(.*?)\1/g, (match, quote, classList) => (
+            "class=" + quote + prefixClassList(classList) + quote
+        ));
+    }
+
+    return {
+        prefixHtmlClassAttributes,
+        renderRootClass: renderRootClassName
+    };
+})();
+
+const prefix_html_class_attributes = classPrefixHelpers.prefixHtmlClassAttributes;
+
 const defaultTheme = {
     mobile: {
         groups: [{border: "border-blue-400", color: "bg-blue-400"},
@@ -83,7 +127,7 @@ const defaultRenderOptions = {
     assetRoot: "images"
 }
 
-const renderRootClass = "cb-topology-renderer";
+const renderRootClass = classPrefixHelpers.renderRootClass;
 
 let activeRenderOptions = defaultRenderOptions;
 
@@ -604,52 +648,38 @@ function create_sgwGroups(data) {
 }
 
 
-function create_database_header_table() {
-    return "                               <thead class=\"border-b-2 border-orange-400\">\n" +
-        "                                    <tr>\n" +
-        "                                        <th class=\"px-2 py-1 text-xs text-gray-500\">\n" +
-        "                                            Databases\n" +
-        "                                        </th>\n" +
-        "                                    </tr>\n" +
-        "                                    </thead>\n";
+function create_database_header() {
+    return "                            <div class=\"cb-tr-mobile-databases-header border-b-2 border-orange-400 px-2 py-1 text-xs text-gray-500 font-bold\">\n" +
+        "                                <span>Databases</span>\n" +
+        "                            </div>\n";
 }
 
 
 function create_database_table_body_row(database) {
     const cfg = defaultTheme.mobile.databases;
 
-    return "                                    <tr class=\"whitespace-nowrap \">\n" +
-        "                                        <td class=\"px-2 py-1 text-xs text-gray-500\">\n" +
-        "                                            <div class=\"flex flex-row px-6 py-1 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400 w-full\">" + create_fontawesome_label(cfg.icon, database.name) + "</div>\n" +
-        "                                        </td>\n" +
-        "                                    </tr>\n";
+    return "                            <div class=\"cb-tr-mobile-database-row whitespace-nowrap px-2 py-1 text-xs text-gray-500\">\n" +
+        "                                <div class=\"cb-tr-mobile-database-pill flex flex-row flex-nowrap items-center px-6 py-1 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400\">" + create_fontawesome_label(cfg.icon, database.name) + "</div>\n" +
+        "                            </div>\n";
 }
 
 function create_database_table_body(databases) {
     if (!has_items(databases)) {
-        return "                                    <tbody class=\"bg-white\">\n" +
-            "                                    </tbody>\n";
+        return "                            <div class=\"cb-tr-mobile-databases-body bg-white\"></div>\n";
     }
     let body = "";
     databases.forEach(b => body += create_database_table_body_row(b));
-    return "                                    <tbody class=\"bg-white\">\n" +
+    return "                            <div class=\"cb-tr-mobile-databases-body bg-white\">\n" +
         body +
-
-        "                                    </tbody>\n";
+        "                            </div>\n";
 }
 
 function create_mobile_databases(databases) {
 
-    return has_items(databases) ? "  <div class=\"mt-4\" >\n" +
-        "                    <div class=\"flex flex-col\">\n" +
-        "                        <div class=\"w-full\">\n" +
-        "                            <div>\n" +
-        "                                <table>\n" +
-        create_database_header_table() +
+    return has_items(databases) ? "  <div class=\"cb-tr-mobile-databases mt-4\" >\n" +
+        "                    <div class=\"cb-tr-mobile-databases-card inline-block\">\n" +
+        create_database_header() +
         create_database_table_body(databases) +
-        "                                </table>\n" +
-        "                            </div>\n" +
-        "                        </div>\n" +
         "                    </div>\n" +
         "                </div>" : "";
 }
@@ -705,11 +735,11 @@ function create_load_balancer(data) {
     const cfg = defaultTheme.mobile.network;
     const publicAddress = data && data.publicAddress ? data.publicAddress : "";
 
-    return "<div class=\"mx-2 flex-column\">" +
-        "<div class=\"text-xs " + cfg.urlColor + " text-right \"><p>" + publicAddress + "</p></div>" +
-        "<div class=\"z-10 border-b-2 border-black-400 border-dashed\"></div>" +
-        "<div class=\"grid justify-items-center \">" +
-        "   <div class=\"-my-3 mx-10 px-6 py-1 text-xs " + cfg.textColor + " font-bold " + cfg.color + " rounded-xl shadow-400\">" + create_fontawesome_label(cfg.icon, cfg.displayText) + "</div>\n" +
+    return "<div class=\"cb-tr-mobile-network mx-2 flex-column\">" +
+        "<div class=\"cb-tr-mobile-network-address text-xs " + cfg.urlColor + " text-right \"><span>" + publicAddress + "</span></div>" +
+        "<div class=\"cb-tr-mobile-network-line z-10 border-b-2 border-black-400 border-dashed\"></div>" +
+        "<div class=\"cb-tr-mobile-network-pill-wrap grid justify-items-center \">" +
+        "   <div class=\"cb-tr-mobile-network-pill -my-3 mx-10 px-6 py-1 text-xs " + cfg.textColor + " font-bold " + cfg.color + " rounded-xl shadow-400\">" + create_fontawesome_label(cfg.icon, cfg.displayText) + "</div>\n" +
         "</div>" +
         "</div>";
 }
@@ -747,7 +777,7 @@ function create_server_topology(data) {
 
 function render_cluster_html(data, options) {
     const topology = data || {};
-    return with_render_options(options, () => "<div class=\"" + renderRootClass + "\">" +
+    return with_render_options(options, () => prefix_html_class_attributes("<div class=\"" + renderRootClass + "\">" +
         "<div class=\"flex flex-col justify-content-center\">" +
         "<div class=\"flex flex-row justify-content-center items-center \">" +
         create_mobile(topology.mobile) +
@@ -764,7 +794,7 @@ function render_cluster_html(data, options) {
         "  </div>" +
         "</div>" +
         "</div>" +
-        "</div>");
+        "</div>"));
 }
 
 function create_cluster(content, data, options) {

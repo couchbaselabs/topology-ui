@@ -11,6 +11,8 @@ Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluste
 npm install @couchbaselabs/topology-ui
 ```
 
+For developers working from this repository, `npm install` also runs the package `prepare` step and generates the bundled stylesheet in `dist/`.
+
 ### Dependencies
 
 ```
@@ -19,7 +21,7 @@ npm install @couchbaselabs/topology-ui
 <head>
     <meta charset="UTF-8">
     <title>Couchbase Info CSS</title>
-    <!-- topology-ui styles are bundled in the package -->
+    <!-- topology-ui ships a single scoped stylesheet -->
     <link href="./dist/topology-ui.css" rel="stylesheet"/>
     <!-- jsoneditor v9.7.3 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.css" rel="stylesheet" type="text/css">
@@ -34,6 +36,7 @@ npm install @couchbaselabs/topology-ui
 | [**JsonEditor**](https://github.com/josdejong/jsoneditor) | NO | is a web-based tool to view, edit, format, and validate JSON. It has various modes such as a tree editor, a code editor, and a plain text editor. The editor can be used as a component in your own web application. The library can be loaded as CommonJS module, AMD module, or as a regular javascript file.|
 
 - **Tailwind CSS** and **Font-Awesome** are used by some components, but consumers do not need to include them separately because the required runtime styling dependencies are already bundled in the package stylesheet.
+- The distributed stylesheet is already scoped to the renderer root, so it is safe to load globally in embedded host apps such as Wiki.js.
 - `jsoneditor` is not included and remains demo-only.
 
 ### Use As A Dependency
@@ -47,6 +50,8 @@ const data = {
 
 const html = topologyUi.renderTopology(data);
 ```
+
+`renderTopology()` returns markup wrapped in the library root container (`.cb-topology-renderer`), so the packaged stylesheet only affects the rendered topology block.
 
 Or if you already have a DOM element:
 
@@ -76,6 +81,15 @@ Best-practice usage is to load a single stylesheet from the package:
 
 ```
 <link href="./dist/topology-ui.css" rel="stylesheet"/>
+```
+
+In an embedded host application you can install the package, load that stylesheet once, and inject the returned HTML directly:
+
+```
+const topologyUi = require("@couchbaselabs/topology-ui");
+
+const container = document.getElementById("display");
+container.innerHTML = topologyUi.renderTopology(data);
 ```
 
 ### Topology Viewer

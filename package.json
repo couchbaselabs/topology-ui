@@ -15,7 +15,7 @@
     "./images/*": "./images/*",
     "./styles.css": "./dist/topology-ui.css"
   },
-  "dependencies": {
+  "devDependencies": {
     "@fortawesome/fontawesome-free": "5.15.4",
     "tailwindcss": "3.0.24"
   },
@@ -32,7 +32,7 @@
   "scripts": {
     "build:css": "tailwindcss -i ./build/tailwind-input.css -o ./dist/topology-ui.css --config ./tailwind.config.cjs --minify && node ./scripts/bundle-styles.mjs",
     "prepare": "npm run build:css",
-    "test": "node --test"
+    "test": "npm run build:css && node --test"
   },
   "keywords": [
     "couchbase",

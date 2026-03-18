@@ -83,6 +83,8 @@ const defaultRenderOptions = {
     assetRoot: "images"
 }
 
+const renderRootClass = "cb-topology-renderer";
+
 let activeRenderOptions = defaultRenderOptions;
 
 function has_items(data) {
@@ -728,7 +730,7 @@ function create_apps(data) {
 }
 
 function create_server_topology(data) {
-    return has_server_topology(data) ? "   <div class=\"m-4 flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
+    return has_server_topology(data) ? "   <div class=\"m-4 inline-block flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
         add_cluster_name(data.name) +
         create_server_groups(data.serverGroups) +
         create_resources(data.resources) +
@@ -738,13 +740,14 @@ function create_server_topology(data) {
 
 function render_cluster_html(data, options) {
     const topology = data || {};
-    return with_render_options(options, () => "<div class=\"flex flex-col justify-content-center\">" +
+    return with_render_options(options, () => "<div class=\"" + renderRootClass + "\">" +
+        "<div class=\"flex flex-col justify-content-center\">" +
         "<div class=\"flex flex-row justify-content-center items-center \">" +
         create_mobile(topology.mobile) +
         create_apps(topology.applications) +
         "</div>" +
         "<div class=\"flex flex-row auto-rows-auto\">" +
-        "  <div class=\"flex-col align-center grow \">" +
+        "  <div class=\"flex-col align-center shrink-0 \">" +
         create_server_topology(topology) +
         "  </div>" +
         "  <div class=\"flex flex-col flex-nowrap  shrink-0 \">" +
@@ -752,6 +755,7 @@ function render_cluster_html(data, options) {
         create_buckets(topology.buckets) +
         "      </div>" +
         "  </div>" +
+        "</div>" +
         "</div>" +
         "</div>");
 }
@@ -767,6 +771,7 @@ const topologyUi = {
     defaultTheme,
     get_asset_root,
     getAssetRoot: get_asset_root,
+    renderRootClass,
     render_cluster_html,
     renderClusterHtml: render_cluster_html,
     set_asset_root,

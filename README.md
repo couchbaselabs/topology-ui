@@ -5,6 +5,12 @@ Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluste
 
 ## Get Started 
 
+### Installation
+
+```
+npm install @couchbaselabs/topology-ui
+```
+
 ### Dependencies
 
 ```
@@ -13,15 +19,11 @@ Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluste
 <head>
     <meta charset="UTF-8">
     <title>Couchbase Info CSS</title>
-    <!-- font-awesome v5.15.4 -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"/>
-    <!-- tailwind v3.0.23 -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- topology-ui styles are bundled in the package -->
+    <link href="./dist/topology-ui.css" rel="stylesheet"/>
     <!-- jsoneditor v9.7.3 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.css" rel="stylesheet" type="text/css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.js"></script>
-    <!-- topology-ui -->
-    <script src="js/couchbase-info.js"></script>
 </head>
 ```
 
@@ -31,7 +33,50 @@ Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluste
 | [**Font-Awesome**](https://fontawesome.com) | NO* | The easiest way to get icons on your website is with a Kit. It's your very own custom version of Font Awesome, all bundled up with only the icons, tools, and settings you need. |
 | [**JsonEditor**](https://github.com/josdejong/jsoneditor) | NO | is a web-based tool to view, edit, format, and validate JSON. It has various modes such as a tree editor, a code editor, and a plain text editor. The editor can be used as a component in your own web application. The library can be loaded as CommonJS module, AMD module, or as a regular javascript file.|
 
-(*): **Font-Awesome** library is not required but used by some components. If it is not loaded, the icon would be missing.
+- **Tailwind CSS** and **Font-Awesome** are used by some components, but consumers do not need to include them separately because the required runtime styling dependencies are already bundled in the package stylesheet.
+- `jsoneditor` is not included and remains demo-only.
+
+### Use As A Dependency
+
+```
+const topologyUi = require("@couchbaselabs/topology-ui");
+
+const data = {
+  ... topology data here ...
+};
+
+const html = topologyUi.renderTopology(data);
+```
+
+Or if you already have a DOM element:
+
+```
+const topologyUi = require("@couchbaselabs/topology-ui");
+
+const content = document.getElementById("display");
+topologyUi.create_cluster(content, data);
+```
+
+If the topology source comes as a JSON string or a JavaScript object literal string:
+
+```
+const topologyUi = require("@couchbaselabs/topology-ui");
+
+const data = topologyUi.parseTopologySource(rawInput);
+const html = topologyUi.renderTopology(data);
+```
+
+The packaged renderer preserves the original output and still expects the same image assets. By default image references resolve to `images/...`. You can override that with `assetRoot`:
+
+```
+const html = topologyUi.renderTopology(data, { assetRoot: "/assets/topology-ui/images" });
+```
+
+Best-practice usage is to load a single stylesheet from the package:
+
+```
+<link href="./dist/topology-ui.css" rel="stylesheet"/>
+```
 
 ### Topology Viewer
 
@@ -39,9 +84,7 @@ Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluste
 <head>
     <meta charset="UTF-8">
     <title>Couchbase Info CSS</title>
-    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css" rel="stylesheet">
-    <script src="js/couchbase-info.js"></script>
+    <link href="./dist/topology-ui.css" rel="stylesheet">
     ...
 </head>
 <body>
@@ -61,7 +104,7 @@ Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluste
 				... topology data here ...
         }
     let content = document.getElementById("display");
-    create_cluster(content, data);
+    topologyUi.create_cluster(content, data);
 </script>
 </body>
 ```

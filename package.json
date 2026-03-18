@@ -1,0 +1,45 @@
+{
+  "name": "@couchbaselabs/topology-ui",
+  "version": "0.1.0",
+  "description": "Packaged Couchbase topology renderer preserving the original browser output and dependencies.",
+  "license": "Apache-2.0",
+  "type": "commonjs",
+  "main": "./index.js",
+  "module": "./index.mjs",
+  "exports": {
+    ".": {
+      "require": "./index.js",
+      "import": "./index.mjs"
+    },
+    "./browser": "./js/couchbase-info.js",
+    "./images/*": "./images/*",
+    "./styles.css": "./dist/topology-ui.css"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "5.15.4",
+    "tailwindcss": "3.0.24"
+  },
+  "files": [
+    "dist",
+    "index.js",
+    "index.mjs",
+    "images",
+    "js",
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build:css": "tailwindcss -i ./build/tailwind-input.css -o ./dist/topology-ui.css --config ./tailwind.config.cjs --minify && node ./scripts/bundle-styles.mjs",
+    "prepare": "npm run build:css",
+    "test": "node --test"
+  },
+  "keywords": [
+    "couchbase",
+    "topology",
+    "tailwind",
+    "font-awesome",
+    "markdown",
+    "renderer"
+  ]
+}

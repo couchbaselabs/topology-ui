@@ -79,6 +79,43 @@ const defaultTheme = {
     }
 }
 
+const defaultRenderOptions = {
+    assetRoot: "images"
+}
+
+let activeRenderOptions = defaultRenderOptions;
+
+function normalize_asset_root(root) {
+    if (!root) {
+        return defaultRenderOptions.assetRoot;
+    }
+    return root.replace(/\/+$/, "");
+}
+
+function with_render_options(options, render) {
+    const previousOptions = activeRenderOptions;
+    activeRenderOptions = {
+        assetRoot: normalize_asset_root(options && options.assetRoot)
+    };
+    try {
+        return render();
+    } finally {
+        activeRenderOptions = previousOptions;
+    }
+}
+
+function get_asset_root() {
+    return normalize_asset_root(activeRenderOptions && activeRenderOptions.assetRoot);
+}
+
+function set_asset_root(root) {
+    defaultRenderOptions.assetRoot = normalize_asset_root(root);
+}
+
+function get_asset_path(assetName) {
+    return get_asset_root() + "/" + assetName;
+}
+
 
 function add_cluster_name(clusterName) {
     // set cluster name
@@ -134,7 +171,7 @@ function create_resources(resources) {
 function add_node_image(resources) {
     let height = resources ? 50 : 60;
     return "<svg id=\"svg-node1\" y=\"10\" width=\"90\" height=\"" + height + "\">" +
-        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"images/nodebg.png\"/>" +
+        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"" + get_asset_path("nodebg.png") + "\"/>" +
         "</svg>";
 }
 
@@ -355,7 +392,7 @@ function create_svg_icon(src) {
 
 function create_connector_icon(data) {
     console.log("connector: ", data)
-    return create_svg_icon("images/connector-" + data + ".svg");
+    return create_svg_icon(get_asset_path("connector-" + data + ".svg"));
 }
 
 function get_connectors(data) {
@@ -499,7 +536,7 @@ function create_instance(data, svg) {
 
 function create_sgwInstance(sgwData) {
     let height = sgwData.resources ? 35 : 50;
-    return create_instance(sgwData, create_svg("images/syncgateway.svg", height));
+    return create_instance(sgwData, create_svg(get_asset_path("syncgateway.svg"), height));
 }
 
 function create_sgwGroups(data) {
@@ -569,7 +606,7 @@ function create_mobile_databases(databases) {
 }
 
 function create_os_icon(os) {
-    return create_svg_icon("images/os-" + os + ".svg");
+    return create_svg_icon(get_asset_path("os-" + os + ".svg"));
 }
 
 function create_os_icons(data) {
@@ -592,7 +629,7 @@ function create_mobile_client(data) {
         "                                    <div class=\"px-2 flex flex-row\">" +
         "                                            <div class=\"m-1 " + (data.total ? "" : "hidden") + "\"><span class=\"p-1 rounded-full bg-black text-white font-bold text-xs\">" + data.total + "x</span></div>" +
         "                                            <svg width=\"30\" height=\"40\">\n" +
-        "                                                <image width=\"30\" height=\"40\" preserveAspectRatio=\"none\" xlink:href=\"images/couchbaselite.svg\" />\n" +
+        "                                                <image width=\"30\" height=\"40\" preserveAspectRatio=\"none\" xlink:href=\"" + get_asset_path("couchbaselite.svg") + "\" />\n" +
         "                                            </svg>\n" +
         create_os_icons(data.os) +
         "                                    </div>" +
@@ -660,8 +697,8 @@ function create_server_topology(data) {
         "      </div>" : "" ;
 }
 
-function create_cluster(content, data) {
-    content.innerHTML = "<div class=\"flex flex-col justify-content-center\">" +
+function render_cluster_html(data, options) {
+    return with_render_options(options, () => "<div class=\"flex flex-col justify-content-center\">" +
         "<div class=\"flex flex-row justify-content-center items-center \">" +
         create_mobile(data.mobile) +
         create_apps(data.applications) +
@@ -676,5 +713,32 @@ function create_cluster(content, data) {
         "      </div>" +
         "  </div>" +
         "</div>" +
-        "</div>";
+        "</div>");
+}
+
+function create_cluster(content, data, options) {
+    content.innerHTML = render_cluster_html(data, options);
+    return content;
+}
+
+const topologyUi = {
+    create_cluster,
+    createCluster: create_cluster,
+    defaultTheme,
+    get_asset_root,
+    getAssetRoot: get_asset_root,
+    render_cluster_html,
+    renderClusterHtml: render_cluster_html,
+    set_asset_root,
+    setAssetRoot: set_asset_root
+}
+
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = topologyUi;
+}
+
+if (typeof window !== "undefined") {
+    window.couchbaseTopologyUi = topologyUi;
+    window.create_cluster = create_cluster;
+    window.render_cluster_html = render_cluster_html;
 }

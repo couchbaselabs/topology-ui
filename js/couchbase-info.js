@@ -312,7 +312,7 @@ function create_collection(data, cfg = defaultTheme.cluster.buckets.default) {
     return (data && data.name) ?
         "   <div class=\"grid col-start-1 col-span-2 grid-nowrap mb-1 content-center justify-self-stretch justify-items-start px-2 text-xs text-white font-bold " + cfg.collections.color + " rounded-xl shadow-400\">" +
         "      <div class=\"flex flex-row flex-nowrap justify-self-stretch items-center\">" +
-        "        <i class=\"pl-1 " + cfg.collections.icon + "\"><span class=\"px-2\">" + data.name + "   </span>" + "</i>" +
+        "        " + create_fontawesome_label("pl-1 " + cfg.collections.icon, data.name + "   ") +
         "      </div>\n" +
         "   </div>" +
         "   <div class=\"grid col-start-4 grid-nowrap content-center justify-items-center px-2 text-center text-xs text-gray-300 \">" +
@@ -345,7 +345,7 @@ function create_grid_scope_body(data, cfg = defaultTheme.cluster.buckets.default
 
     return "<div class='grid grid-cols-8 " + cfg.scopes.color + " rounded-md shadow-xs ml-1 " + marginBottom + "'>" +
         "   <div class=\"grid col-start-1 col-span-2 grid-nowrap content-center justify-self-stretch justify-items-start px-2 text-xs text-white font-bold \">" +
-        "        <i class=\"pl-1 " + scopeIcon + "\"><span class=\"px-2\">" + data.name + "   </span>" + "</i>" +
+        "        " + create_fontawesome_label("pl-1 " + scopeIcon, data.name + "   ") +
         "   </div>" +
         "   <div class=\"grid col-start-4 grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center text-xs text-gray-400 font-bold\">" +
         "       <p> " + ndocs + "</p>" +
@@ -421,6 +421,13 @@ function create_svg_icon(src) {
         " </svg> ";
 }
 
+function create_fontawesome_label(iconClass, label, wrapperClass = "flex flex-row flex-nowrap items-center") {
+    return "<span class=\"" + wrapperClass + "\">" +
+        "<i class=\"" + iconClass + "\"></i>" +
+        "<span class=\"px-2\">" + label + "</span>" +
+        "</span>";
+}
+
 function create_connector_icon(data) {
     return create_svg_icon(get_asset_path("connector-" + data + ".svg"));
 }
@@ -454,7 +461,7 @@ function create_grid_body_row(data) {
     return "<div class=\"grid grid-cols-8 gap-0 text-xs text-gray-500 text-center font-bold pb-1 break-normal justify-items-center\"> \n " +
         "    <div class=\"col-span-2 grid grid-nowrap content-center justify-self-stretch justify-items-start px-2 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400\">" +
         "      <div class=\"flex flex-row flex-nowrap justify-self-stretch items-center\">" +
-        "        <i class=\"" + cfg.icon + "  pl-1\"><span class=\"px-2\">" + data.name + "   </span>" + "</i>" + total +
+        "        " + create_fontawesome_label(cfg.icon + " pl-1", data.name + "   ") + total +
         "      </div>\n" +
         "    </div>" +
         "    <div class=\"grid grid-nowrap text-xs text-gray-900 break-normal\">\n" +
@@ -613,7 +620,7 @@ function create_database_table_body_row(database) {
 
     return "                                    <tr class=\"whitespace-nowrap \">\n" +
         "                                        <td class=\"px-2 py-1 text-xs text-gray-500\">\n" +
-        "                                            <div class=\"flex flex-row px-6 py-1 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400 w-full\"><i class=\"" + cfg.icon + "\"><span class='px-2'>" + database.name + "</span></i></div>\n" +
+        "                                            <div class=\"flex flex-row px-6 py-1 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400 w-full\">" + create_fontawesome_label(cfg.icon, database.name) + "</div>\n" +
         "                                        </td>\n" +
         "                                    </tr>\n";
 }
@@ -702,7 +709,7 @@ function create_load_balancer(data) {
         "<div class=\"text-xs " + cfg.urlColor + " text-right \"><p>" + publicAddress + "</p></div>" +
         "<div class=\"z-10 border-b-2 border-black-400 border-dashed\"></div>" +
         "<div class=\"grid justify-items-center \">" +
-        "   <div class=\"-my-3 mx-10 px-6 py-1 text-xs " + cfg.textColor + " font-bold " + cfg.color + " rounded-xl shadow-400\"><i class=\"" + cfg.icon + "\"><span class='px-2'>" + cfg.displayText + "</span></i></div>\n" +
+        "   <div class=\"-my-3 mx-10 px-6 py-1 text-xs " + cfg.textColor + " font-bold " + cfg.color + " rounded-xl shadow-400\">" + create_fontawesome_label(cfg.icon, cfg.displayText) + "</div>\n" +
         "</div>" +
         "</div>";
 }

@@ -1,0 +1,40 @@
+[changelog]
+header = ""
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+
+{% for commit in commits %}
+{%- set title = commit.message | split(pat="\n") | first | trim | split(pat=" (#") | first -%}
+{%- if commit.scope -%}
+{%- set clean_title = title | split(pat="(" ~ commit.scope ~ ")") | last | trim | trim_start_matches(pat=":") | trim -%}
+- [`{{ commit.id | truncate(length=7, end="") }}`](https://github.com/couchbaselabs/topology-ui/commit/{{ commit.id }}) - **{{ commit.scope }}**: {{ clean_title }}{% if commit.remote.pr_number and commit.remote.username %} *(PR [#{{ commit.remote.pr_number }}](https://github.com/couchbaselabs/topology-ui/pull/{{ commit.remote.pr_number }}) by [@{{ commit.remote.username }}](https://github.com/{{ commit.remote.username }}))*{% elif commit.remote.pr_number %} *(PR [#{{ commit.remote.pr_number }}](https://github.com/couchbaselabs/topology-ui/pull/{{ commit.remote.pr_number }}))*{% elif commit.remote.username %} *(commit by [@{{ commit.remote.username }}](https://github.com/{{ commit.remote.username }}))*{% elif commit.author.name %} *(commit by {{ commit.author.name }})*{% endif %}
+{%- else -%}
+- [`{{ commit.id | truncate(length=7, end="") }}`](https://github.com/couchbaselabs/topology-ui/commit/{{ commit.id }}) - {{ title }}{% if commit.remote.pr_number and commit.remote.username %} *(PR [#{{ commit.remote.pr_number }}](https://github.com/couchbaselabs/topology-ui/pull/{{ commit.remote.pr_number }}) by [@{{ commit.remote.username }}](https://github.com/{{ commit.remote.username }}))*{% elif commit.remote.pr_number %} *(PR [#{{ commit.remote.pr_number }}](https://github.com/couchbaselabs/topology-ui/pull/{{ commit.remote.pr_number }}))*{% elif commit.remote.username %} *(commit by [@{{ commit.remote.username }}](https://github.com/{{ commit.remote.username }}))*{% elif commit.author.name %} *(commit by {{ commit.author.name }})*{% endif %}
+{%- endif %}
+{% endfor %}
+{% endfor %}
+"""
+trim = true
+
+[git]
+conventional_commits = false
+filter_unconventional = false
+split_commits = false
+
+commit_parsers = [
+  { message = "^Merge ", skip = true },
+  { message = "(?i)(bucket|mobile|sync gateway|scope|scopes|collection|collections|connector|cluster topology)", group = "Features" },
+  { message = "(?i)(css|tailwind|font|style|styles|theme)", group = "Styling" },
+  { message = "(?i)(renderer|render|layout|host-safe|stacking context)", group = "Renderer" },
+  { message = "(?i)(refactor|cleanup|format|modularize)", group = "Maintenance" },
+  { message = "(?i)(npm|publish|package|release|changelog|cliff)", group = "Packaging & Release" },
+  { message = "(?i)(readme|docs?|documentation|sample)", group = "Documentation" },
+  { message = "(?i)\\b(test|tests)\\b", group = "Tests" },
+  { message = ".*", group = "Other Changes" },
+]
+
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "v[0-9].*"
+sort_commits = "oldest"

@@ -1,11 +1,29 @@
-# JavaScript Couchbase Topology UI Viewer using Tailwind CSS
-Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluster Topology, Services and Buckets details in your preferrable html browser: 
+# JavaScript Couchbase Topology UI Viewer
+Couchbase Topology UI Viewer is a JavaScript library for rendering Couchbase cluster, mobile, and bucket topology details in the browser.
 
-![overview](docs/assets/overview-mobile.png)
+The package is designed to be safe to embed inside host applications that already ship their own CSS frameworks or content styling, including Vuetify apps, CMS platforms, and documentation sites. Load the packaged stylesheet once, call `renderTopology(...)`, and no host-specific compatibility CSS should be necessary.
+
+![overview](https://raw.githubusercontent.com/couchbaselabs/topology-ui/main/docs/assets/overview-mobile.png)
 
 ## Get Started 
 
-### Dependencies
+### Installation
+
+```
+npm install @couchbaselabs/topology-ui
+```
+
+For developers working from this repository, `npm install` also runs the package `prepare` step and generates the bundled stylesheet in `dist/`.
+
+### Stylesheet
+
+For bundlers, import the published stylesheet subpath:
+
+```
+import "@couchbaselabs/topology-ui/styles.css";
+```
+
+For a plain HTML page, load the packaged CSS file directly from the installed package or from a copied asset bundle:
 
 ```
 <!DOCTYPE html>
@@ -13,25 +31,72 @@ Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluste
 <head>
     <meta charset="UTF-8">
     <title>Couchbase Info CSS</title>
-    <!-- font-awesome v5.15.4 -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"/>
-    <!-- tailwind v3.0.23 -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="./node_modules/@couchbaselabs/topology-ui/dist/topology-ui.css" rel="stylesheet"/>
     <!-- jsoneditor v9.7.3 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.css" rel="stylesheet" type="text/css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.js"></script>
-    <!-- topology-ui -->
-    <script src="js/couchbase-info.js"></script>
 </head>
 ```
 
-| Library | Required | Description |
-| :--- | :--- | :--- |
-| [**Tailwind CSS**](https://tailwindcss.com/blog/tailwindcss-v3) | YES | helps you to rapidly build modern websites without ever leaving your HTML. A utility-first CSS framework packed with classes like flex, pt-4, text-center and rotate-90 that can be composed to build any design, directly in your markup.| 
-| [**Font-Awesome**](https://fontawesome.com) | NO* | The easiest way to get icons on your website is with a Kit. It's your very own custom version of Font Awesome, all bundled up with only the icons, tools, and settings you need. |
-| [**JsonEditor**](https://github.com/josdejong/jsoneditor) | NO | is a web-based tool to view, edit, format, and validate JSON. It has various modes such as a tree editor, a code editor, and a plain text editor. The editor can be used as a component in your own web application. The library can be loaded as CommonJS module, AMD module, or as a regular javascript file.|
+The package bundles the required Tailwind-generated rules and Font Awesome icon styles into `dist/topology-ui.css`, so consumers do not need to add Tailwind CSS or Font Awesome separately.
 
-(*): **Font-Awesome** library is not required but used by some components. If it is not loaded, the icon would be missing.
+- The stylesheet is scoped to the renderer root, `.cb-topology-renderer`.
+- Internal renderer classes are library-owned and prefixed, so host utility classes like `flex`, `px-6`, `py-1`, `text-right`, and similar framework helpers do not collide with the topology markup.
+- The default package CSS is the only stylesheet consumers should need.
+- `jsoneditor` is not included and remains demo-only.
+
+### Use As A Dependency
+
+```
+const topologyUi = require("@couchbaselabs/topology-ui");
+
+const data = {
+  ... topology data here ...
+};
+
+const html = topologyUi.renderTopology(data);
+```
+
+`renderTopology()` returns markup wrapped in the library root container (`.cb-topology-renderer`), and the packaged stylesheet targets only that rendered topology block.
+
+Or if you already have a DOM element:
+
+```
+const topologyUi = require("@couchbaselabs/topology-ui");
+
+const content = document.getElementById("display");
+topologyUi.create_cluster(content, data);
+```
+
+If the topology source comes as a JSON string or a JavaScript object literal string:
+
+```
+const topologyUi = require("@couchbaselabs/topology-ui");
+
+const data = topologyUi.parseTopologySource(rawInput);
+const html = topologyUi.renderTopology(data);
+```
+
+The packaged renderer preserves the public JavaScript API and visual output while emitting host-safe, namespaced internal classes. By default image references resolve to `images/...` relative to the page. In npm-based apps you will usually copy `node_modules/@couchbaselabs/topology-ui/images` into your public assets and override that path with `assetRoot`:
+
+```
+const html = topologyUi.renderTopology(data, { assetRoot: "/assets/topology-ui/images" });
+```
+
+Best-practice usage is still simple: install the package, load one stylesheet, and render the returned HTML.
+
+```
+import "@couchbaselabs/topology-ui/styles.css";
+```
+
+In an embedded host application you can load that stylesheet once and inject the returned HTML directly:
+
+```
+const topologyUi = require("@couchbaselabs/topology-ui");
+
+const container = document.getElementById("display");
+container.innerHTML = topologyUi.renderTopology(data);
+```
 
 ### Topology Viewer
 
@@ -39,9 +104,7 @@ Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluste
 <head>
     <meta charset="UTF-8">
     <title>Couchbase Info CSS</title>
-    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css" rel="stylesheet">
-    <script src="js/couchbase-info.js"></script>
+    <link href="./node_modules/@couchbaselabs/topology-ui/dist/topology-ui.css" rel="stylesheet">
     ...
 </head>
 <body>
@@ -61,7 +124,7 @@ Couchbase Topology UI Viewer is a JavaScript Library to display Couchbase Cluste
 				... topology data here ...
         }
     let content = document.getElementById("display");
-    create_cluster(content, data);
+    topologyUi.create_cluster(content, data);
 </script>
 </body>
 ```

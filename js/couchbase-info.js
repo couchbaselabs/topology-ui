@@ -1,3 +1,47 @@
+const classPrefixHelpers = typeof require === "function" ? require("../lib/class-prefix") : (() => {
+    const renderRootClassName = "cb-topology-renderer";
+    const rendererUtilityPrefix = "cb-tu-";
+
+    function isFontAwesomeClass(token) {
+        return /^fa([bdrslt])?$/.test(token) || /^fa-[A-Za-z0-9-]+$/.test(token);
+    }
+
+    function isLibraryOwnedClass(token) {
+        return !!token && (
+            token === renderRootClassName ||
+            token.indexOf(rendererUtilityPrefix) === 0 ||
+            token.indexOf("cb-tr-") === 0
+        );
+    }
+
+    function prefixUtilityClassName(token) {
+        return token && !isLibraryOwnedClass(token) && !isFontAwesomeClass(token) ?
+            rendererUtilityPrefix + token :
+            token;
+    }
+
+    function prefixClassList(classList) {
+        return classList
+            .split(/\s+/)
+            .filter(Boolean)
+            .map(prefixUtilityClassName)
+            .join(" ");
+    }
+
+    function prefixHtmlClassAttributes(html) {
+        return html.replace(/\bclass=(["'])(.*?)\1/g, (match, quote, classList) => (
+            "class=" + quote + prefixClassList(classList) + quote
+        ));
+    }
+
+    return {
+        prefixHtmlClassAttributes,
+        renderRootClass: renderRootClassName
+    };
+})();
+
+const prefix_html_class_attributes = classPrefixHelpers.prefixHtmlClassAttributes;
+
 const defaultTheme = {
     mobile: {
         groups: [{border: "border-blue-400", color: "bg-blue-400"},
@@ -79,6 +123,68 @@ const defaultTheme = {
     }
 }
 
+const defaultRenderOptions = {
+    assetRoot: "images"
+}
+
+const renderRootClass = classPrefixHelpers.renderRootClass;
+
+let activeRenderOptions = defaultRenderOptions;
+
+function has_items(data) {
+    return Array.isArray(data) && data.length > 0;
+}
+
+function has_server_topology(data) {
+    return !!(data && (
+        has_items(data.serverGroups) ||
+        data.name ||
+        data.version ||
+        data.resources
+    ));
+}
+
+function has_mobile_topology(data) {
+    return !!(data && (
+        has_items(data.groups) ||
+        has_items(data.databases) ||
+        has_items(data.clients) ||
+        data.publicAddress ||
+        data.version
+    ));
+}
+
+function normalize_asset_root(root) {
+    if (!root) {
+        return defaultRenderOptions.assetRoot;
+    }
+    return root.replace(/\/+$/, "");
+}
+
+function with_render_options(options, render) {
+    const previousOptions = activeRenderOptions;
+    activeRenderOptions = {
+        assetRoot: normalize_asset_root(options && options.assetRoot)
+    };
+    try {
+        return render();
+    } finally {
+        activeRenderOptions = previousOptions;
+    }
+}
+
+function get_asset_root() {
+    return normalize_asset_root(activeRenderOptions && activeRenderOptions.assetRoot);
+}
+
+function set_asset_root(root) {
+    defaultRenderOptions.assetRoot = normalize_asset_root(root);
+}
+
+function get_asset_path(assetName) {
+    return get_asset_root() + "/" + assetName;
+}
+
 
 function add_cluster_name(clusterName) {
     // set cluster name
@@ -104,7 +210,7 @@ function normalize(name, maxLength) {
 function add_node_name(name) {
     let hidden = name ? "" : "hidden";
     const displayName = normalize(name, 9);
-    return "   <p class=\"flex-row text-xs text-gray-400 font-bold " + hidden + " \">" + displayName + "</p>"
+    return "   <div class=\"flex-row text-xs text-gray-400 font-bold " + hidden + " \">" + displayName + "</div>"
 }
 
 function create_resources(resources) {
@@ -119,8 +225,8 @@ function create_resources(resources) {
     }
     return "                                        <div class=\"align-center " + hidden + " \">\n" +
         "                                            <div class=\" " + cfg + " rounded-lg text-xs font-bold mx-2 px-2 \">\n" +
-        "                                                <p>" + memory + " GB</p>" +
-        "                                                <p> " + cpus + " CPUs</p>" +
+        "                                                <div>" + memory + " GB</div>" +
+        "                                                <div> " + cpus + " CPUs</div>" +
         "                                            </div>\n" +
         "                                        </div>\n";
     /* return " <div class=\"-my-6 align-center " + hidden + "\">" +
@@ -134,15 +240,18 @@ function create_resources(resources) {
 function add_node_image(resources) {
     let height = resources ? 50 : 60;
     return "<svg id=\"svg-node1\" y=\"10\" width=\"90\" height=\"" + height + "\">" +
-        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"images/nodebg.png\"/>" +
+        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"" + get_asset_path("nodebg.png") + "\"/>" +
         "</svg>";
 }
 
 function create_node_service(service) {
-    return "<p>" + service + "</p>"
+    return "<div>" + service + "</div>"
 }
 
 function add_node_services(services) {
+    if (!has_items(services)) {
+        return "";
+    }
     let servicesDisplay = ""
     services.forEach(serv => servicesDisplay += create_node_service(serv))
     return "<div class=\"flex-row text-xs font-bold \">" +
@@ -182,6 +291,9 @@ function create_server_group(sg, groupsVisible, position) {
 }
 
 function create_server_groups(serverGroups) {
+    if (!has_items(serverGroups)) {
+        return "";
+    }
 
     let groupsVisible = serverGroups.length > 1;
     let serverGroupsDiv = "";
@@ -227,13 +339,13 @@ function get_bucket_config(type) {
 
 function create_grid_header() {
     return "<div class=\"grid grid-cols-8 border-b-2 border-orange-400 text-xs text-gray-500 text-center font-bold p-1 mb-1 grid-nowrap\"> \n " +
-        "   <div class='col-span-2'><p>Buckets</p></div> \n " +
-        "   <div><p>Quota</p></div> \n " +
-        "   <div><p>#docs</p></div> \n " +
-        "   <div><p>%Resident</p></div> \n " +
-        "   <div><p>Replicas</p></div> \n " +
-        "   <div><p>Connectors</p></div> \n " +
-        "   <div><p>TTL</p></div> \n " +
+        "   <div class='col-span-2'><span>Buckets</span></div> \n " +
+        "   <div><span>Quota</span></div> \n " +
+        "   <div><span>#docs</span></div> \n " +
+        "   <div><span>%Resident</span></div> \n " +
+        "   <div><span>Replicas</span></div> \n " +
+        "   <div><span>Connectors</span></div> \n " +
+        "   <div><span>TTL</span></div> \n " +
         "</div> \n ";
 }
 
@@ -244,17 +356,17 @@ function create_collection(data, cfg = defaultTheme.cluster.buckets.default) {
     return (data && data.name) ?
         "   <div class=\"grid col-start-1 col-span-2 grid-nowrap mb-1 content-center justify-self-stretch justify-items-start px-2 text-xs text-white font-bold " + cfg.collections.color + " rounded-xl shadow-400\">" +
         "      <div class=\"flex flex-row flex-nowrap justify-self-stretch items-center\">" +
-        "        <i class=\"pl-1 " + cfg.collections.icon + "\"><span class=\"px-2\">" + data.name + "   </span>" + "</i>" +
+        "        " + create_fontawesome_label("pl-1 " + cfg.collections.icon, data.name + "   ") +
         "      </div>\n" +
         "   </div>" +
         "   <div class=\"grid col-start-4 grid-nowrap content-center justify-items-center px-2 text-center text-xs text-gray-300 \">" +
-        "       <p> " + ndocs + "</p>" +
+        "       <span> " + ndocs + "</span>" +
         "   </div>" +
         "   <div class=\"grid col-start-7 grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center text-xs text-gray-400 font-bold\">" +
         connectors +
         "   </div>" +
         "   <div class=\"grid col-start-8 grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center text-xs text-gray-400 font-bold\">" +
-        "       <p> " + ttl + "</p>" +
+        "       <span> " + ttl + "</span>" +
         "   </div>"
         : "";
 }
@@ -272,15 +384,15 @@ function create_grid_scope_body(data, cfg = defaultTheme.cluster.buckets.default
         marginBottom = "";
         scopeIcon = cfg.scopes.iconExtend;
         // TODO add total collections per scope
-        total = "<p class=\" px-1 bg-white rounded-full text-blue-400 \">" + data.collections.length + " </p>";
+        total = "<span class=\" px-1 bg-white rounded-full text-blue-400 \">" + data.collections.length + " </span>";
     }
 
     return "<div class='grid grid-cols-8 " + cfg.scopes.color + " rounded-md shadow-xs ml-1 " + marginBottom + "'>" +
         "   <div class=\"grid col-start-1 col-span-2 grid-nowrap content-center justify-self-stretch justify-items-start px-2 text-xs text-white font-bold \">" +
-        "        <i class=\"pl-1 " + scopeIcon + "\"><span class=\"px-2\">" + data.name + "   </span>" + "</i>" +
+        "        " + create_fontawesome_label("pl-1 " + scopeIcon, data.name + "   ") +
         "   </div>" +
         "   <div class=\"grid col-start-4 grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center text-xs text-gray-400 font-bold\">" +
-        "       <p> " + ndocs + "</p>" +
+        "       <span> " + ndocs + "</span>" +
         "   </div>" +
         "</div>"
         + collections;
@@ -353,9 +465,15 @@ function create_svg_icon(src) {
         " </svg> ";
 }
 
+function create_fontawesome_label(iconClass, label, wrapperClass = "flex flex-row flex-nowrap items-center") {
+    return "<span class=\"" + wrapperClass + "\">" +
+        "<i class=\"" + iconClass + "\"></i>" +
+        "<span class=\"px-2\">" + label + "</span>" +
+        "</span>";
+}
+
 function create_connector_icon(data) {
-    console.log("connector: ", data)
-    return create_svg_icon("images/connector-" + data + ".svg");
+    return create_svg_icon(get_asset_path("connector-" + data + ".svg"));
 }
 
 function get_connectors(data) {
@@ -372,7 +490,6 @@ function create_grid_body_row(data) {
     let type = data.type ? data.type : "default";
     let cfg = get_bucket_config(type);
     let others = [data.type === "total" ? "bg-gray-800" : "bg-gray-400", data.type === "total" ? "bg-gray-800" : "bg-amber-400", "bg-orange-400", "bg-yellow-800"];
-    console.log("bucket config: ", type, JSON.stringify(cfg));
     let replicas = data.replicas ? data.replicas : "--";
     let total = "";
     let scopes = "";
@@ -388,7 +505,7 @@ function create_grid_body_row(data) {
     return "<div class=\"grid grid-cols-8 gap-0 text-xs text-gray-500 text-center font-bold pb-1 break-normal justify-items-center\"> \n " +
         "    <div class=\"col-span-2 grid grid-nowrap content-center justify-self-stretch justify-items-start px-2 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400\">" +
         "      <div class=\"flex flex-row flex-nowrap justify-self-stretch items-center\">" +
-        "        <i class=\"" + cfg.icon + "  pl-1\"><span class=\"px-2\">" + data.name + "   </span>" + "</i>" + total +
+        "        " + create_fontawesome_label(cfg.icon + " pl-1", data.name + "   ") + total +
         "      </div>\n" +
         "    </div>" +
         "    <div class=\"grid grid-nowrap text-xs text-gray-900 break-normal\">\n" +
@@ -415,6 +532,9 @@ function create_grid_body_row(data) {
 }
 
 function create_grid_body(data) {
+    if (!has_items(data)) {
+        return "";
+    }
     let body = "";
     data.forEach(b => body += create_grid_body_row(b));
     return body;
@@ -440,7 +560,7 @@ function create_grid_summary(data) {
 }
 
 function create_buckets_grid_table(data) {
-    return data ?
+    return has_items(data) ?
         "<div class=\"grid grid-cols-1 shadow-sm m-4 \">" +
         create_grid_header() +
         create_grid_body(data) +
@@ -450,7 +570,7 @@ function create_buckets_grid_table(data) {
 }
 
 function create_buckets(buckets) {
-    return buckets ?
+    return has_items(buckets) ?
         "     <div class=\"flex flex-col flex-nowrap\">\n " +
         create_buckets_grid_table(buckets) +
         "     </div> "
@@ -462,7 +582,9 @@ function create_sgwGroup(sgwGroupInstances, visibleGroups, position) {
     let cfg = defaultTheme.mobile.groups[position % defaultTheme.mobile.groups.length];
     let sgName = sgwGroupInstances.name;
 
-    sgwGroupInstances.instances.forEach(n => sgws += create_sgwInstance(n));
+    if (has_items(sgwGroupInstances.instances)) {
+        sgwGroupInstances.instances.forEach(n => sgws += create_sgwInstance(n));
+    }
 
     return visibleGroups ? "<div  class=\"my-2 border-2 " + cfg.border + "  border-dotted \">" +
         "          <div class=\"-my-2 flex-row align-center\">" +
@@ -488,26 +610,30 @@ function create_svg(src, height = 50, width = 90) {
 
 function create_instance(data, svg) {
     return "                          <div class=\"flex-row max-w-100 py-2 my-0\">\n" +
-        "                                    <p class=\"flex-row text-xs text-gray-400 font-bold\">" + data.nodeIp + "</p>\n" +
+        "                                    <div class=\"flex-row text-xs text-gray-400 font-bold\">" + data.nodeIp + "</div>\n" +
         svg +
         create_resources(data.resources) +
         "                                    <div class=\"flex-row\">\n" +
-        "                                        <p>" + data.name + "</p>\n" +
+        "                                        <div>" + data.name + "</div>\n" +
         "                                    </div>\n" +
         "                                </div>\n";
 }
 
 function create_sgwInstance(sgwData) {
     let height = sgwData.resources ? 35 : 50;
-    return create_instance(sgwData, create_svg("images/syncgateway.svg", height));
+    return create_instance(sgwData, create_svg(get_asset_path("syncgateway.svg"), height));
 }
 
 function create_sgwGroups(data) {
+    if (!data) {
+        return "";
+    }
     let versionBorder = data.version ? "border-b-2 " + defaultTheme.mobile.version.lineColor : "";
     let sgwGroups = "";
     let position = 0;
-    const visibleGroups = data.groups.length > 1;
-    data.groups.forEach(g => {
+    const groups = has_items(data.groups) ? data.groups : [];
+    const visibleGroups = groups.length > 1;
+    groups.forEach(g => {
         sgwGroups += create_sgwGroup(g, visibleGroups, position);
         position++;
     });
@@ -522,54 +648,44 @@ function create_sgwGroups(data) {
 }
 
 
-function create_database_header_table() {
-    return "                               <thead class=\"border-b-2 border-orange-400\">\n" +
-        "                                    <tr>\n" +
-        "                                        <th class=\"px-2 py-1 text-xs text-gray-500\">\n" +
-        "                                            Databases\n" +
-        "                                        </th>\n" +
-        "                                    </tr>\n" +
-        "                                    </thead>\n";
+function create_database_header() {
+    return "                            <div class=\"cb-tr-mobile-databases-header border-b-2 border-orange-400 px-2 py-1 text-xs text-gray-500 font-bold\">\n" +
+        "                                <span>Databases</span>\n" +
+        "                            </div>\n";
 }
 
 
 function create_database_table_body_row(database) {
     const cfg = defaultTheme.mobile.databases;
 
-    return "                                    <tr class=\"whitespace-nowrap \">\n" +
-        "                                        <td class=\"px-2 py-1 text-xs text-gray-500\">\n" +
-        "                                            <div class=\"flex flex-row px-6 py-1 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400 w-full\"><i class=\"" + cfg.icon + "\"><span class='px-2'>" + database.name + "</span></i></div>\n" +
-        "                                        </td>\n" +
-        "                                    </tr>\n";
+    return "                            <div class=\"cb-tr-mobile-database-row whitespace-nowrap px-2 py-1 text-xs text-gray-500\">\n" +
+        "                                <div class=\"cb-tr-mobile-database-pill flex flex-row flex-nowrap items-center px-6 py-1 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400\">" + create_fontawesome_label(cfg.icon, database.name) + "</div>\n" +
+        "                            </div>\n";
 }
 
 function create_database_table_body(databases) {
+    if (!has_items(databases)) {
+        return "                            <div class=\"cb-tr-mobile-databases-body bg-white\"></div>\n";
+    }
     let body = "";
     databases.forEach(b => body += create_database_table_body_row(b));
-    return "                                    <tbody class=\"bg-white\">\n" +
+    return "                            <div class=\"cb-tr-mobile-databases-body bg-white\">\n" +
         body +
-
-        "                                    </tbody>\n";
+        "                            </div>\n";
 }
 
 function create_mobile_databases(databases) {
 
-    return databases ? "  <div class=\"mt-4\" >\n" +
-        "                    <div class=\"flex flex-col\">\n" +
-        "                        <div class=\"w-full\">\n" +
-        "                            <div>\n" +
-        "                                <table>\n" +
-        create_database_header_table() +
+    return has_items(databases) ? "  <div class=\"cb-tr-mobile-databases mt-4\" >\n" +
+        "                    <div class=\"cb-tr-mobile-databases-card inline-block\">\n" +
+        create_database_header() +
         create_database_table_body(databases) +
-        "                                </table>\n" +
-        "                            </div>\n" +
-        "                        </div>\n" +
         "                    </div>\n" +
         "                </div>" : "";
 }
 
 function create_os_icon(os) {
-    return create_svg_icon("images/os-" + os + ".svg");
+    return create_svg_icon(get_asset_path("os-" + os + ".svg"));
 }
 
 function create_os_icons(data) {
@@ -581,24 +697,23 @@ function create_os_icons(data) {
             icons +
             "      </div>";
     }
-    console.log('salida: ', output);
     return output;
 }
 
 function create_mobile_client(data) {
     let showResources = data.languages || data.versions ? "" : "hidden";
     return "                          <div class=\"flex-column max-w-100 py-2 my-0 space-y-0\">\n" +
-        "                                    <p class=\"text-xs text-gray-400 font-bold text-center\">" + (data.name ? data.name : "") + "</p>\n" +
+        "                                    <div class=\"text-xs text-gray-400 font-bold text-center\">" + (data.name ? data.name : "") + "</div>\n" +
         "                                    <div class=\"px-2 flex flex-row\">" +
         "                                            <div class=\"m-1 " + (data.total ? "" : "hidden") + "\"><span class=\"p-1 rounded-full bg-black text-white font-bold text-xs\">" + data.total + "x</span></div>" +
         "                                            <svg width=\"30\" height=\"40\">\n" +
-        "                                                <image width=\"30\" height=\"40\" preserveAspectRatio=\"none\" xlink:href=\"images/couchbaselite.svg\" />\n" +
+        "                                                <image width=\"30\" height=\"40\" preserveAspectRatio=\"none\" xlink:href=\"" + get_asset_path("couchbaselite.svg") + "\" />\n" +
         "                                            </svg>\n" +
         create_os_icons(data.os) +
         "                                    </div>" +
         "                                    <div class=\"align-center -top-4 " + showResources + " \">\n" +
         "                                            <div class=\"-top-16 bg-red-600 z-10 rounded-lg text-xs text-white font-bold mx-2 px-2 my-0 py-0 text-center\">\n" +
-        "                                                <p>lite " + data.language + ":" + data.versions + "</p>" +
+        "                                                <div>lite " + data.language + ":" + data.versions + "</div>" +
         "                                            </div>\n" +
         "                                    </div>\n" +
         "                                </div>\n";
@@ -618,13 +733,13 @@ function create_mobile_clients(data) {
 
 function create_load_balancer(data) {
     const cfg = defaultTheme.mobile.network;
+    const publicAddress = data && data.publicAddress ? data.publicAddress : "";
 
-
-    return "<div class=\"mx-2 flex-column\">" +
-        "<div class=\"text-xs " + cfg.urlColor + " text-right \"><p>" + data.publicAddress + "</p></div>" +
-        "<div class=\"z-10 border-b-2 border-black-400 border-dashed\"></div>" +
-        "<div class=\"grid justify-items-center \">" +
-        "   <div class=\"-my-3 mx-10 px-6 py-1 text-xs " + cfg.textColor + " font-bold " + cfg.color + " rounded-xl shadow-400\"><i class=\"" + cfg.icon + "\"><span class='px-2'>" + cfg.displayText + "</span></i></div>\n" +
+    return "<div class=\"cb-tr-mobile-network mx-2 flex-column\">" +
+        "<div class=\"cb-tr-mobile-network-address text-xs " + cfg.urlColor + " text-right \"><span>" + publicAddress + "</span></div>" +
+        "<div class=\"cb-tr-mobile-network-line z-10 border-b-2 border-black-400 border-dashed\"></div>" +
+        "<div class=\"cb-tr-mobile-network-pill-wrap grid justify-items-center \">" +
+        "   <div class=\"cb-tr-mobile-network-pill -my-3 mx-10 px-6 py-1 text-xs " + cfg.textColor + " font-bold " + cfg.color + " rounded-xl shadow-400\">" + create_fontawesome_label(cfg.icon, cfg.displayText) + "</div>\n" +
         "</div>" +
         "</div>";
 }
@@ -636,7 +751,7 @@ function create_version(version) {
 }
 
 function create_mobile(data) {
-    return data ? "<div class=\"flex-column mb-2 -pb-2\">" +
+    return has_mobile_topology(data) ? "<div class=\"flex-column mb-2 -pb-2\">" +
         create_mobile_clients(data.clients) +
         create_load_balancer(data) +
         "<div class=\"mx-2 -my-2 flex flex-row font-bold font-bold text-red-700 text-center text-xs \">" +
@@ -652,29 +767,60 @@ function create_apps(data) {
 }
 
 function create_server_topology(data) {
-    return   data ?      "   <div class=\"m-4 flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
+    return has_server_topology(data) ? "   <div class=\"m-4 inline-block flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
         add_cluster_name(data.name) +
         create_server_groups(data.serverGroups) +
         create_resources(data.resources) +
         create_cluster_version(data.version) +
-        "      </div>" : "" ;
+        "      </div>" : "";
 }
 
-function create_cluster(content, data) {
-    content.innerHTML = "<div class=\"flex flex-col justify-content-center\">" +
+function render_cluster_html(data, options) {
+    const topology = data || {};
+    return with_render_options(options, () => prefix_html_class_attributes("<div class=\"" + renderRootClass + "\">" +
+        "<div class=\"flex flex-col justify-content-center\">" +
         "<div class=\"flex flex-row justify-content-center items-center \">" +
-        create_mobile(data.mobile) +
-        create_apps(data.applications) +
+        create_mobile(topology.mobile) +
+        create_apps(topology.applications) +
         "</div>" +
         "<div class=\"flex flex-row auto-rows-auto\">" +
-        "  <div class=\"flex-col align-center grow \">" +
-        create_server_topology(data)+
+        "  <div class=\"flex-col align-center shrink-0 \">" +
+        create_server_topology(topology) +
         "  </div>" +
         "  <div class=\"flex flex-col flex-nowrap  shrink-0 \">" +
         "   <div class=\"flex flex-row flex-nowrap  \">" +
-        create_buckets(data.buckets) +
+        create_buckets(topology.buckets) +
         "      </div>" +
         "  </div>" +
         "</div>" +
-        "</div>";
+        "</div>" +
+        "</div>"));
+}
+
+function create_cluster(content, data, options) {
+    content.innerHTML = render_cluster_html(data, options);
+    return content;
+}
+
+const topologyUi = {
+    create_cluster,
+    createCluster: create_cluster,
+    defaultTheme,
+    get_asset_root,
+    getAssetRoot: get_asset_root,
+    renderRootClass,
+    render_cluster_html,
+    renderClusterHtml: render_cluster_html,
+    set_asset_root,
+    setAssetRoot: set_asset_root
+}
+
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = topologyUi;
+}
+
+if (typeof window !== "undefined") {
+    window.couchbaseTopologyUi = topologyUi;
+    window.create_cluster = create_cluster;
+    window.render_cluster_html = render_cluster_html;
 }

@@ -1,0 +1,58 @@
+{
+  "name": "@couchbaselabs/topology-ui",
+  "version": "1.0.0",
+  "description": "Packaged Couchbase topology renderer preserving the original browser output and dependencies.",
+  "license": "Apache-2.0",
+  "type": "commonjs",
+  "main": "./index.js",
+  "module": "./index.mjs",
+  "style": "./dist/topology-ui.css",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/couchbaselabs/topology-ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/couchbaselabs/topology-ui/issues"
+  },
+  "homepage": "https://github.com/couchbaselabs/topology-ui#readme",
+  "exports": {
+    ".": {
+      "require": "./index.js",
+      "import": "./index.mjs"
+    },
+    "./browser": "./js/couchbase-info.js",
+    "./images/*": "./images/*",
+    "./styles.css": "./dist/topology-ui.css"
+  },
+  "devDependencies": {
+    "@fortawesome/fontawesome-free": "5.15.4",
+    "tailwindcss": "3.0.24"
+  },
+  "files": [
+    "dist",
+    "index.js",
+    "index.mjs",
+    "images",
+    "js",
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build:css": "tailwindcss -i ./build/tailwind-input.css -o ./dist/topology-ui.css --config ./tailwind.config.cjs --minify && node ./scripts/bundle-styles.mjs",
+    "prepare": "npm run build:css",
+    "prepublishOnly": "npm test",
+    "test": "npm run build:css && node --test"
+  },
+  "keywords": [
+    "couchbase",
+    "topology",
+    "tailwind",
+    "font-awesome",
+    "markdown",
+    "renderer"
+  ]
+}

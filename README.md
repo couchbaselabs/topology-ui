@@ -3,7 +3,7 @@ Couchbase Topology UI Viewer is a JavaScript library for rendering Couchbase clu
 
 The package is designed to be safe to embed inside host applications that already ship their own CSS frameworks or content styling, including Vuetify apps, CMS platforms, and documentation sites. Load the packaged stylesheet once, call `renderTopology(...)`, and no host-specific compatibility CSS should be necessary.
 
-![overview](docs/assets/overview-mobile.png)
+![overview](https://raw.githubusercontent.com/couchbaselabs/topology-ui/main/docs/assets/overview-mobile.png)
 
 ## Get Started 
 
@@ -17,14 +17,21 @@ For developers working from this repository, `npm install` also runs the package
 
 ### Stylesheet
 
+For bundlers, import the published stylesheet subpath:
+
+```
+import "@couchbaselabs/topology-ui/styles.css";
+```
+
+For a plain HTML page, load the packaged CSS file directly from the installed package or from a copied asset bundle:
+
 ```
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Couchbase Info CSS</title>
-    <!-- topology-ui ships a single scoped stylesheet -->
-    <link href="./dist/topology-ui.css" rel="stylesheet"/>
+    <link href="./node_modules/@couchbaselabs/topology-ui/dist/topology-ui.css" rel="stylesheet"/>
     <!-- jsoneditor v9.7.3 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.css" rel="stylesheet" type="text/css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.7.3/jsoneditor.min.js"></script>
@@ -70,7 +77,7 @@ const data = topologyUi.parseTopologySource(rawInput);
 const html = topologyUi.renderTopology(data);
 ```
 
-The packaged renderer preserves the public JavaScript API and visual output while emitting host-safe, namespaced internal classes. By default image references resolve to `images/...`. You can override that with `assetRoot`:
+The packaged renderer preserves the public JavaScript API and visual output while emitting host-safe, namespaced internal classes. By default image references resolve to `images/...` relative to the page. In npm-based apps you will usually copy `node_modules/@couchbaselabs/topology-ui/images` into your public assets and override that path with `assetRoot`:
 
 ```
 const html = topologyUi.renderTopology(data, { assetRoot: "/assets/topology-ui/images" });
@@ -79,7 +86,7 @@ const html = topologyUi.renderTopology(data, { assetRoot: "/assets/topology-ui/i
 Best-practice usage is still simple: install the package, load one stylesheet, and render the returned HTML.
 
 ```
-<link href="./dist/topology-ui.css" rel="stylesheet"/>
+import "@couchbaselabs/topology-ui/styles.css";
 ```
 
 In an embedded host application you can load that stylesheet once and inject the returned HTML directly:
@@ -97,7 +104,7 @@ container.innerHTML = topologyUi.renderTopology(data);
 <head>
     <meta charset="UTF-8">
     <title>Couchbase Info CSS</title>
-    <link href="./dist/topology-ui.css" rel="stylesheet">
+    <link href="./node_modules/@couchbaselabs/topology-ui/dist/topology-ui.css" rel="stylesheet">
     ...
 </head>
 <body>

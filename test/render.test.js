@@ -214,6 +214,50 @@ test("distributed stylesheet is scoped and uses prefixed renderer classes", () =
   assert.doesNotMatch(scopedCss, /(^|})body\{/);
 });
 
+test("renderTopology renders node total grouping with stack and label", () => {
+  const html = renderTopology({
+    name: "cb-demo",
+    serverGroups: [
+      {
+        name: "sg1",
+        nodes: [
+          {
+            name: "cb-grouped",
+            resources: { memory: "256", cpus: "16" },
+            services: ["Data"],
+            total: 5
+          }
+        ]
+      }
+    ]
+  });
+
+  assert.match(html, /cb-tr-node-stack\b/);
+  assert.match(html, /cb-tr-node-stack-total/);
+  assert.match(html, /bg-black[^"]*"[^>]*>5x</);
+  const stackImages = html.match(/<image[^>]*opacity="[^"]+"[^>]*nodebg\.png/g) || [];
+  assert.equal(stackImages.length, 2, "expected two faded stack image layers");
+  assertNoLayoutParagraphTags(html);
+  assertNamespacedRendererClasses(html);
+  assertNoHostCollisionUtilityTokens(html);
+});
+
+test("renderTopology does not wrap nodes when total is missing or <= 1", () => {
+  for (const node of [
+    { name: "n1", services: ["Data"] },
+    { name: "n2", services: ["Data"], total: 1 },
+    { name: "n3", services: ["Data"], total: 0 },
+    { name: "n4", services: ["Data"], total: -3 },
+    { name: "n5", services: ["Data"], total: "abc" }
+  ]) {
+    const html = renderTopology({
+      name: "cb-demo",
+      serverGroups: [{ name: "sg1", nodes: [node] }]
+    });
+    assert.doesNotMatch(html, /cb-tr-node-stack/, `unexpected stack wrapper for total=${JSON.stringify(node.total)}`);
+  }
+});
+
 test("renderTopology renders buckets without requiring serverGroups", () => {
   const html = renderTopology({
     buckets: [

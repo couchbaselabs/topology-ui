@@ -377,6 +377,33 @@ let data = {
             ]
 ```
 
+#### Grouping identical nodes with `total`
+
+When a Server Group or Sync Gateway Group contains many identical nodes, listing them one by one makes the diagram tall and noisy. Set the `total` property on a node (or Sync Gateway instance) to render a single visual that represents `total` identical nodes. The renderer draws the node once with a small stacked-card effect behind it and a black `Nx` label on the left.
+
+The field is optional. Omit it (or set `total <= 1`) to keep the original one-node-per-entry rendering.
+
+```
+{
+    name: "cb-demo0003",
+    resources: { memory: "256", cpus: "16" },
+    services: ["Data"],
+    status: "HEALTHY",
+    total: 20
+}
+```
+
+The same field works for Sync Gateway instances:
+
+```
+{
+    nodeIp: "10.0.0.9",
+    name: "SG 1",
+    resources: { memory: 32, cpus: 8 },
+    total: 5
+}
+```
+
 * **buckets**: Array of Buckets. You can define `ephemeral`, `couchbase` and `magma` bucket types. The default value if `type` property is missing is `couchbase`. Optionally, you can display the list of scopes and collections per scope. Another optional property among others, is `connectors` that would accept the following enum values: `mobile`, `kafka`, `elastic`, `spark`
 
 ![scopes/collections](docs/assets/scopes-collections.png)

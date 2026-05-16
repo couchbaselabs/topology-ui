@@ -43,12 +43,18 @@
                       {
                           "name": "cb-demo0000",
                           "services": ["Data", "Query", "Index"],
-                          "status": "HEALTHY"
+                          "status": "HEALTHY",
+                          "total": 5,
+                          "resources": {
+                              "memory": "128",
+                              "cpus": "8"
+                          }
                       },
                       {
                           "name": "cb-demo0001",
                           "services": ["Data", "Query", "Index"],
-                          "status": "HEALTHY"
+                          "status": "HEALTHY",
+                          "total": 2
                       },
                       {
                           "name": "cb-demo0002",
@@ -143,7 +149,8 @@
                               "resources": {
                                   "memory": 32,
                                   "cpus": 8
-                              }
+                              },
+                              "total": 3
                           },
                           {
                               "nodeIp": "10.0.0.10",

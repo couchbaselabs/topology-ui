@@ -210,7 +210,7 @@ function normalize(name, maxLength) {
 function add_node_name(name) {
     let hidden = name ? "" : "hidden";
     const displayName = normalize(name, 9);
-    return "   <div class=\"flex-row text-xs text-gray-400 font-bold " + hidden + " \">" + displayName + "</div>"
+    return "   <div class=\"flex-row text-xs text-gray-400 font-bold mb-1 " + hidden + " \">" + displayName + "</div>"
 }
 
 function create_resources(resources) {
@@ -237,10 +237,20 @@ function create_resources(resources) {
          "         </div>"*/
 }
 
-function add_node_image(resources) {
+function add_node_image(resources, total) {
     let height = resources ? 50 : 60;
-    return "<svg id=\"svg-node1\" y=\"10\" width=\"90\" height=\"" + height + "\">" +
-        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"" + get_asset_path("nodebg.png") + "\"/>" +
+    const href = get_asset_path("nodebg.png");
+    let layers = "";
+    let overflow = "";
+    if (total > 1) {
+        overflow = " style=\"overflow:visible\"";
+        layers =
+            "<image x=\"12\" y=\"-16\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" opacity=\"0.3\" xlink:href=\"" + href + "\"/>" +
+            "<image x=\"6\" y=\"-13\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" opacity=\"0.55\" xlink:href=\"" + href + "\"/>";
+    }
+    return "<svg id=\"svg-node1\" y=\"10\" width=\"90\" height=\"" + height + "\"" + overflow + ">" +
+        layers +
+        "    <image x=\"0\" y=\"-10\" width=\"90\" height=\"80\" preserveAspectRatio=\"none\" xlink:href=\"" + href + "\"/>" +
         "</svg>";
 }
 
@@ -259,13 +269,26 @@ function add_node_services(services) {
         "</div>"
 }
 
+function node_total(node) {
+    const n = Number(node && node.total);
+    return Number.isFinite(n) && n >= 2 ? Math.floor(n) : 0;
+}
+
 function create_node(node) {
-    return "<div class=\"flex-row max-w-100 py-2 my-0 space-y-0\">" +
+    const total = node_total(node);
+    const inner = "<div class=\"flex-row max-w-100 py-2 my-0 space-y-0\">" +
         add_node_name(node.name) +
-        add_node_image(node.resources) +
+        add_node_image(node.resources, total) +
         create_resources(node.resources) +
         add_node_services(node.services) +
-        "</div>"
+        "</div>";
+    if (!total) {
+        return inner;
+    }
+    return "<div class=\"cb-tr-node-stack\">" +
+        "<div class=\"cb-tr-node-stack-total\"><span class=\"p-1 rounded-full bg-black text-white font-bold text-xs\">" + total + "x</span></div>" +
+        inner +
+        "</div>";
 }
 
 function create_server_group_nodes(sgNodes) {
@@ -602,26 +625,43 @@ function create_sgwGroup(sgwGroupInstances, visibleGroups, position) {
         "</div>";
 }
 
-function create_svg(src, height = 50, width = 90) {
-    return "                                    <svg y=\"10\" width=\"" + width + "\" height=\"" + height + "\">\n" +
+function create_svg(src, height = 50, width = 90, total = 0) {
+    let layers = "";
+    let overflow = "";
+    if (total > 1) {
+        overflow = " style=\"overflow:visible\"";
+        layers =
+            "<image x=\"29\" y=\"-11\" width=\"55\" height=\"55\" preserveAspectRatio=\"none\" opacity=\"0.3\" xlink:href=\"" + src + "\" />" +
+            "<image x=\"23\" y=\"-8\" width=\"55\" height=\"55\" preserveAspectRatio=\"none\" opacity=\"0.55\" xlink:href=\"" + src + "\" />";
+    }
+    return "                                    <svg y=\"10\" width=\"" + width + "\" height=\"" + height + "\"" + overflow + ">\n" +
+        layers +
         "                                        <image x=\"17\" y=\"-5\" width=\"55\" height=\"55\" preserveAspectRatio=\"none\" xlink:href=\"" + src + "\" />\n" +
         "                                    </svg>\n";
 }
 
-function create_instance(data, svg) {
-    return "                          <div class=\"flex-row max-w-100 py-2 my-0\">\n" +
-        "                                    <div class=\"flex-row text-xs text-gray-400 font-bold\">" + data.nodeIp + "</div>\n" +
+function create_instance(data, svg, total) {
+    const inner = "                          <div class=\"flex-row max-w-100 py-2 my-0\">\n" +
+        "                                    <div class=\"flex-row text-xs text-gray-400 font-bold mb-1\">" + data.nodeIp + "</div>\n" +
         svg +
         create_resources(data.resources) +
         "                                    <div class=\"flex-row\">\n" +
         "                                        <div>" + data.name + "</div>\n" +
         "                                    </div>\n" +
         "                                </div>\n";
+    if (!total) {
+        return inner;
+    }
+    return "<div class=\"cb-tr-node-stack\">" +
+        "<div class=\"cb-tr-node-stack-total\"><span class=\"p-1 rounded-full bg-black text-white font-bold text-xs\">" + total + "x</span></div>" +
+        inner +
+        "</div>";
 }
 
 function create_sgwInstance(sgwData) {
     let height = sgwData.resources ? 35 : 50;
-    return create_instance(sgwData, create_svg(get_asset_path("syncgateway.svg"), height));
+    const total = node_total(sgwData);
+    return create_instance(sgwData, create_svg(get_asset_path("syncgateway.svg"), height, 90, total), total);
 }
 
 function create_sgwGroups(data) {

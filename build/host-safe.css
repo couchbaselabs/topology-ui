@@ -81,3 +81,26 @@
   max-width: 100%;
   box-sizing: border-box;
 }
+
+.cb-tr-node-stack {
+  position: relative;
+  display: inline-block;
+  margin: 0 14px 14px 0;
+}
+
+.cb-tr-node-stack svg {
+  display: block;
+}
+
+.cb-tr-node-stack .cb-tu-align-center {
+  position: relative;
+  z-index: 1;
+}
+
+.cb-tr-node-stack-total {
+  position: absolute;
+  top: 22px;
+  left: -4px;
+  z-index: 2;
+  pointer-events: none;
+}

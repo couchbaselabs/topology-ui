@@ -37,6 +37,11 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Set version from tag
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: npm version --no-git-tag-version --allow-same-version "${TAG_NAME#v}"
+
       - name: Generate changelog
         id: git-cliff
         uses: orhun/git-cliff-action@v4

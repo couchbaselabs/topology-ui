@@ -377,6 +377,20 @@ let data = {
             ]
 ```
 
+#### Limiting nodes per line with `nodesPerLine`
+
+By default all nodes inside a server group render on a single line and wrap only when the container runs out of width. Set the optional cluster-level `nodesPerLine` field (positive integer) to cap how many nodes appear on each line. Each server group chunks its nodes independently — the last line may be shorter.
+
+```
+{
+    name: "cb-demo",
+    nodesPerLine: 3,
+    serverGroups: [ ... ]
+}
+```
+
+Example: 9 nodes with `nodesPerLine: 3` → 3 rows of 3. With `nodesPerLine: 2` → 4 rows of 2 plus a final row of 1. Omit the field (or set `0` / a non-integer) to keep the original wrap behavior.
+
 #### Grouping identical nodes with `total`
 
 When a Server Group or Sync Gateway Group contains many identical nodes, listing them one by one makes the diagram tall and noisy. Set the `total` property on a node (or Sync Gateway instance) to render a single visual that represents `total` identical nodes. The renderer draws the node once with a small stacked-card effect behind it and a black `Nx` label on the left.

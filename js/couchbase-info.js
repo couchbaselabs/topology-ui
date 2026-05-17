@@ -291,29 +291,42 @@ function create_node(node) {
         "</div>";
 }
 
-function create_server_group_nodes(sgNodes) {
-    let nodes = "";
-    if (sgNodes)
-        sgNodes.forEach(n => nodes += create_node(n));
-    return "<div class=\"my-2 flex flex-wrap\">" + nodes + "</div>"
+function create_server_group_nodes(sgNodes, nodesPerLine) {
+    if (!sgNodes) return "<div class=\"my-2 flex flex-wrap\"></div>";
+
+    const n = Number.isInteger(nodesPerLine) && nodesPerLine >= 1 ? nodesPerLine : 0;
+
+    if (!n) {
+        let nodes = "";
+        sgNodes.forEach(node => nodes += create_node(node));
+        return "<div class=\"my-2 flex flex-wrap\">" + nodes + "</div>";
+    }
+
+    let rows = "";
+    for (let i = 0; i < sgNodes.length; i += n) {
+        let row = "";
+        sgNodes.slice(i, i + n).forEach(node => row += create_node(node));
+        rows += "<div class=\"flex flex-row\">" + row + "</div>";
+    }
+    return "<div class=\"my-2 flex flex-col -space-y-4\">" + rows + "</div>";
 }
 
-function create_server_group(sg, groupsVisible, position) {
+function create_server_group(sg, groupsVisible, position, nodesPerLine) {
     let cfg = defaultTheme.cluster.groups[position % defaultTheme.cluster.groups.length];
     // server group name
     if (sg && groupsVisible) {
         return "<div class=\"rounded-xl border-2 " + cfg.border + " border-dashed mb-1\">" +
             create_server_group_displayName(sg.name, groupsVisible, cfg.color) +
-            create_server_group_nodes(sg.nodes) +
+            create_server_group_nodes(sg.nodes, nodesPerLine) +
             "</div>";
     } else {
         return "<div class='-mt-8 -mb-4'>" +
-            create_server_group_nodes(sg.nodes) +
+            create_server_group_nodes(sg.nodes, nodesPerLine) +
             "</div>";
     }
 }
 
-function create_server_groups(serverGroups) {
+function create_server_groups(serverGroups, nodesPerLine) {
     if (!has_items(serverGroups)) {
         return "";
     }
@@ -322,7 +335,7 @@ function create_server_groups(serverGroups) {
     let serverGroupsDiv = "";
     let position = 0;
     serverGroups.forEach(sg => {
-        serverGroupsDiv += create_server_group(sg, groupsVisible, position);
+        serverGroupsDiv += create_server_group(sg, groupsVisible, position, nodesPerLine);
         position++;
     });
     // server groups
@@ -809,7 +822,7 @@ function create_apps(data) {
 function create_server_topology(data) {
     return has_server_topology(data) ? "   <div class=\"m-4 inline-block flex-row border-4 rounded-xl border-red-700 font-bold font-bold text-red-700 text-center shadow-xl align-left\">" +
         add_cluster_name(data.name) +
-        create_server_groups(data.serverGroups) +
+        create_server_groups(data.serverGroups, data.nodesPerLine) +
         create_resources(data.resources) +
         create_cluster_version(data.version) +
         "      </div>" : "";

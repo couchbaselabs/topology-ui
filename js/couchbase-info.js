@@ -331,18 +331,37 @@ function create_server_groups(serverGroups, nodesPerLine) {
         return "";
     }
 
-    let groupsVisible = serverGroups.length > 1;
-    let serverGroupsDiv = "";
+    const groupsVisible = serverGroups.length > 1;
+    const cap = Number.isInteger(nodesPerLine) && nodesPerLine >= 1 ? nodesPerLine : 0;
+    const baseClass = "px-4 mt-8 rounded-lg font-bold gap-x-4 gap-y-3 font-bold text-red-700 text-center align-center";
+
+    if (!cap) {
+        let div = "";
+        serverGroups.forEach((sg, i) => {
+            div += create_server_group(sg, groupsVisible, i, nodesPerLine);
+        });
+        return "<div class=\"" + baseClass + " flex flex-wrap\">" + div + "</div>";
+    }
+
+    let rows = "";
+    let rowHtml = "";
+    let rowCount = 0;
     let position = 0;
     serverGroups.forEach(sg => {
-        serverGroupsDiv += create_server_group(sg, groupsVisible, position, nodesPerLine);
+        const nodeCount = has_items(sg.nodes) ? sg.nodes.length : 0;
+        if (rowCount > 0 && rowCount + nodeCount > cap) {
+            rows += "<div class=\"flex flex-row gap-x-4\">" + rowHtml + "</div>";
+            rowHtml = "";
+            rowCount = 0;
+        }
+        rowHtml += create_server_group(sg, groupsVisible, position, nodesPerLine);
+        rowCount += nodeCount;
         position++;
     });
-    // server groups
-    return "<div class=\"px-4 mt-8 flex flex-wrap rounded-lg font-bold gap-x-4 gap-y-3 font-bold text-red-700 text-center align-center\">" +
-        serverGroupsDiv +
-        "</div>";
-
+    if (rowHtml) {
+        rows += "<div class=\"flex flex-row gap-x-4\">" + rowHtml + "</div>";
+    }
+    return "<div class=\"" + baseClass + " flex flex-col\">" + rows + "</div>";
 }
 
 function create_cluster_version(version) {

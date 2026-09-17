@@ -648,19 +648,51 @@ function create_grid_body(data) {
     return body;
 }
 
+function numeric_figure_value(figure) {
+    if (figure.value === null || figure.value === undefined ||
+        (typeof figure.value === "string" && !figure.value.trim())) {
+        return null;
+    }
+    const value = Number(figure.value);
+    return Number.isFinite(value) ? value : null;
+}
+
+function aggregate_figures(values) {
+    const figures = values.map(value => normalizeFigure(value));
+    const usable = figures
+        .map(figure => ({figure, value: numeric_figure_value(figure)}))
+        .filter(({value}) => value !== null);
+    const unit = figures.find(figure => figure.unit !== undefined)?.unit;
+    const result = value => unit === undefined ? value : {...value, unit};
+
+    if (!usable.length) {
+        return result({value: null, status: "absent"});
+    }
+
+    const value = usable.reduce((sum, figure) => sum + figure.value, 0);
+    const incomplete = figures.some(figure => (
+        numeric_figure_value(figure) === null ||
+        ["partial", "stale", "failed", "absent"].includes(figure.status)
+    ));
+
+    if (incomplete) {
+        return result({value, status: "partial", reason: "summary includes incomplete bucket data"});
+    }
+
+    return result({value, status: value === 0 ? "zero" : "ok"});
+}
+
 function create_grid_summary(data) {
     let body = "";
     if (data && data.length > 1) {
         body = "<div class=\"border-t border-gray-200 bg-gray-100 \">"
-        let bucket = data.reduce((b1, b2) => {
-            return {
-                name: "Total",
-                quota: b1.quota + b2.quota,
-                documents: b1.documents + b2.documents,
-                type: "total",
-                total: data.length
-            }
-        });
+        const bucket = {
+            name: "Total",
+            quota: aggregate_figures(data.map(bucket => bucket.quota)),
+            documents: aggregate_figures(data.map(bucket => bucket.documents)),
+            type: "total",
+            total: data.length
+        };
         body += create_grid_body_row(bucket);
         body += "</div>";
     }

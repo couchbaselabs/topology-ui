@@ -86,3 +86,74 @@ test("default figures preserve the 1.1.1 plain-number markup", () => {
 
   assert.equal(actual, expected);
 });
+
+test("bucket summary aggregates object figures as partial quality figures", () => {
+  const figures = [];
+  const html = renderTopology({
+    buckets: [
+      {
+        name: "one",
+        quota: { value: 1024, status: "partial", reason: "one node stale" },
+        documents: { value: 1000, status: "ok" }
+      },
+      {
+        name: "two",
+        quota: { value: 2048, status: "ok" },
+        documents: { value: 2000, status: "stale", reason: "old metrics" }
+      }
+    ]
+  }, {
+    renderFigure(figure) {
+      figures.push(figure);
+      return "<b>X</b>";
+    }
+  });
+
+  assert.doesNotMatch(html, /\[object Object\]/);
+  const summaryFigures = figures.filter((figure) => figure.value === 3);
+  assert.deepEqual(summaryFigures, [
+    { value: 3, unit: "GB", status: "partial", reason: "summary includes incomplete bucket data" },
+    { value: 3, unit: "K", status: "partial", reason: "summary includes incomplete bucket data" }
+  ]);
+});
+
+test("bucket summary keeps plain-number quota and document figures ok", () => {
+  const figures = [];
+  renderTopology({
+    buckets: [
+      { name: "one", quota: 1024, documents: 1000 },
+      { name: "two", quota: 2048, documents: 2000 }
+    ]
+  }, {
+    renderFigure(figure) {
+      figures.push(figure);
+      return "<b>X</b>";
+    }
+  });
+
+  const summaryFigures = figures.filter((figure) => figure.value === 3);
+  assert.deepEqual(summaryFigures, [
+    { value: 3, unit: "GB", status: "ok" },
+    { value: 3, unit: "K", status: "ok" }
+  ]);
+});
+
+test("bucket summary keeps all missing quota and documents absent", () => {
+  const figures = [];
+  renderTopology({
+    buckets: [
+      { name: "one", quota: { value: null, status: "absent" }, documents: { value: null, status: "absent" } },
+      { name: "two", quota: { value: null, status: "absent" }, documents: { value: null, status: "absent" } }
+    ]
+  }, {
+    renderFigure(figure) {
+      figures.push(figure);
+      return "<b>X</b>";
+    }
+  });
+
+  assert.deepEqual(figures.slice(-3, -1), [
+    { value: null, unit: "MB", status: "absent" },
+    { value: null, unit: "", status: "absent" }
+  ]);
+});

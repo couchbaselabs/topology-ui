@@ -70,11 +70,13 @@ const figureHelpers = typeof require === "function" ? require("../lib/figure") :
     function defaultRenderFigure(figure) {
         const normalized = normalizeFigure(figure);
         const status = normalized.status;
-        const text = status === "absent" ? "no data" :
-            status === "failed" ? normalized.reason || "collection failed" :
-                String(normalized.value) + (normalized.unit ? " " + normalized.unit : "");
+        const placeholder = "&#8212;";
+        const valueWithUnit = String(normalized.value) + (normalized.unit ? " " + normalized.unit : "");
+        const text = normalized.value === null || status === "failed" ? placeholder :
+            status === "partial" ? "~" + valueWithUnit : valueWithUnit;
         const description = normalized.reason || status;
-        return `<span class="cb-tu-figure" data-status="${escapeHtml(status)}" aria-description="${escapeHtml(description)}">${escapeHtml(text)}</span>`;
+        const safeText = text === placeholder ? placeholder : escapeHtml(text);
+        return `<span class="cb-tu-figure" data-status="${escapeHtml(status)}" aria-description="${escapeHtml(description)}">${safeText}</span>`;
     }
 
     return {normalizeFigure, defaultRenderFigure};
@@ -596,12 +598,13 @@ function get_connectors(data) {
 
 function create_grid_body_row(data) {
     let type = data.type ? data.type : "default";
+    const isTotal = data.type === "total";
     let cfg = get_bucket_config(type);
-    let others = [data.type === "total" ? "bg-gray-800" : "bg-gray-400", data.type === "total" ? "bg-gray-800" : "bg-amber-400", "bg-orange-400", "bg-yellow-800"];
-    let replicas = render_figure(data.replicas);
+    let others = [isTotal ? "bg-gray-800" : "bg-gray-400", isTotal ? "bg-gray-800" : "bg-amber-400", "bg-orange-400", "bg-yellow-800"];
+    let replicas = isTotal ? "" : render_figure(data.replicas);
     let total = "";
     let scopes = "";
-    let ttl = data.ttl ? "" + data.ttl : "0";
+    let ttl = isTotal ? "" : data.ttl ? "" + data.ttl : "0";
     let connectors = get_connectors(data.connectors);
 
     if (data.scopes) {
@@ -623,7 +626,7 @@ function create_grid_body_row(data) {
         "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[1] + " rounded-xl shadow-400\">" + render_figure(format_docs(data.documents)) + "</span>\n" +
         "    </div>\n" +
         "    <div class=\"grid grid-nowrap text-xs text-gray-900\">\n" +
-        get_ratio_value(data) +
+        (isTotal ? "" : get_ratio_value(data)) +
         "    </div>\n" +
         "    <div class=\"grid grid-nowrap  text-xs text-gray-900 font-bold\">\n" +
         replicas +

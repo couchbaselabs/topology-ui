@@ -49,11 +49,25 @@ test("defaultRenderFigure reports absent data without inventing a value", () => 
   const html = defaultRenderFigure(normalizeFigure(undefined, "GB"));
 
   assert.match(html, /data-status="absent"/);
-  assert.match(html, />no data<\/span>/);
-  assert.doesNotMatch(html, /1/);
+  assert.match(html, />&#8212;<\/span>/);
 });
 
-test("renderTopology renders no data for a README node without resources", () => {
+test("defaultRenderFigure marks partial values without changing their value or unit", () => {
+  const html = defaultRenderFigure({ value: 64, unit: "GB", status: "partial", reason: "one source missing" });
+
+  assert.match(html, /data-status="partial"/);
+  assert.match(html, />~64 GB<\/span>/);
+  assert.doesNotMatch(html, /style=/);
+});
+
+test("defaultRenderFigure uses the same placeholder when collection failed without a value", () => {
+  const html = defaultRenderFigure({ value: null, unit: "%", status: "failed", reason: "Supportal failed" });
+
+  assert.match(html, /data-status="failed"/);
+  assert.match(html, />&#8212;<\/span>/);
+});
+
+test("renderTopology renders a placeholder for a README node without resources", () => {
   const html = renderTopology({
     name: "cb-demo",
     resources: { memory: "128", cpus: "8" },
@@ -63,7 +77,7 @@ test("renderTopology renders no data for a README node without resources", () =>
     }]
   });
 
-  assert.match(html, /no data/);
+  assert.match(html, />&#8212;<\/span>/);
   assert.doesNotMatch(html, /1 GB/);
 });
 
@@ -152,8 +166,21 @@ test("bucket summary keeps all missing quota and documents absent", () => {
     }
   });
 
-  assert.deepEqual(figures.slice(-3, -1), [
+  assert.deepEqual(figures.slice(-2), [
     { value: null, unit: "MB", status: "absent" },
     { value: null, unit: "", status: "absent" }
   ]);
+});
+
+test("bucket summary leaves resident replicas and TTL cells empty", () => {
+  const html = renderTopology({
+    buckets: [
+      { name: "one", quota: 1024, documents: 1000, ratio: 75, replicas: 1, ttl: 3600 },
+      { name: "two", quota: 2048, documents: 2000, ratio: 80, replicas: 2, ttl: 7200 }
+    ]
+  });
+  const summary = html.slice(html.lastIndexOf(">Total"));
+
+  assert.equal((summary.match(/class="cb-tu-figure"/g) || []).length, 2);
+  assert.doesNotMatch(summary, />\s*0\s*<\/div>/);
 });

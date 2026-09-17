@@ -97,7 +97,7 @@ Every displayed memory, CPU, bucket quota, document count, resident ratio, and r
 { value: 7, unit: "GB", status: "partial", reason: "2 nodes unreachable" }
 ```
 
-`renderTopology()` and `mountTopology()` accept `renderFigure`. The renderer calls it for every figure. The default output is a `cb-tu-figure` span with `data-status` and `aria-description`. Missing data renders as `no data`. Failed collection renders the supplied reason, or `collection failed`. This avoids invented values when a resource is absent.
+`renderTopology()` and `mountTopology()` accept `renderFigure`. The renderer calls it for every figure. The default output is a `cb-tu-figure` span with `data-status` and `aria-description`. Missing or failed data renders as `&mdash;`. Partial data renders with a `~` prefix, for example `~7 GB`. Existing topology colors stay unchanged. The Total row leaves Resident, Replicas, and TTL empty. This avoids invented values and keeps quality visible without adding color semantics.
 
 ```js
 const html = topologyUi.renderTopology(data, {

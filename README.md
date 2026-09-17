@@ -89,6 +89,24 @@ Best-practice usage is still simple: install the package, load one stylesheet, a
 import "@couchbaselabs/topology-ui/styles.css";
 ```
 
+## Figures and quality
+
+Every displayed memory, CPU, bucket quota, document count, resident ratio, and replica count is a figure. Supply a plain number as before, or include quality information:
+
+```js
+{ value: 7, unit: "GB", status: "partial", reason: "2 nodes unreachable" }
+```
+
+`renderTopology()` and `mountTopology()` accept `renderFigure`. The renderer calls it for every figure. The default output is a `cb-tu-figure` span with `data-status` and `aria-description`. Missing data renders as `no data`. Failed collection renders the supplied reason, or `collection failed`. This avoids invented values when a resource is absent.
+
+```js
+const html = topologyUi.renderTopology(data, {
+  renderFigure: (figure) => `<strong>${figure.value}</strong>`
+});
+```
+
+Use `normalizeFigure(value, unit)` and `defaultRenderFigure(figure)` from the package when a host needs the same figure contract outside the topology renderer.
+
 In an embedded host application you can load that stylesheet once and inject the returned HTML directly:
 
 ```

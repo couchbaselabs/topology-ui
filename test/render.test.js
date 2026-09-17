@@ -67,6 +67,13 @@ function assertNamespacedRendererClasses(html) {
     .sort();
 
   assert.deepEqual(unexpected, [], `unexpected non-namespaced renderer classes: ${unexpected.join(", ")}`);
+
+  for (const match of html.matchAll(/<span\b([^>]*)>/g)) {
+    if (/\bclass="cb-tu-figure"/.test(match[1])) {
+      assert.match(match[1], /\bdata-status="[^"]+"/);
+      assert.match(match[1], /\baria-description="[^"]*"/);
+    }
+  }
 }
 
 function assertNoHostCollisionUtilityTokens(html) {

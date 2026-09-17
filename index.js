@@ -1,6 +1,7 @@
 "use strict";
 
 const { parseTopologySource } = require("./lib/parser");
+const { defaultRenderFigure, normalizeFigure } = require("./lib/figure");
 const browserRenderer = require("./js/couchbase-info.js");
 
 function normalizeTopologyInput(input, options) {
@@ -28,6 +29,8 @@ function mountTopology(container, input, options = {}) {
 module.exports = {
   ...browserRenderer,
   mountTopology,
+  defaultRenderFigure,
+  normalizeFigure,
   parseTopologySource,
   renderTopology,
   renderTopologyBlock

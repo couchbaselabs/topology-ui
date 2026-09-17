@@ -42,6 +42,46 @@ const classPrefixHelpers = typeof require === "function" ? require("../lib/class
 
 const prefix_html_class_attributes = classPrefixHelpers.prefixHtmlClassAttributes;
 
+const figureHelpers = typeof require === "function" ? require("../lib/figure") : (() => {
+    function normalizeFigure(input, unit) {
+        if (input === null || input === undefined) {
+            return {value: null, unit, status: "absent"};
+        }
+        if (typeof input !== "object") {
+            return {value: input, unit, status: input === 0 ? "zero" : "ok"};
+        }
+        const value = input.value === null || input.value === undefined ? null : input.value;
+        return {
+            ...input,
+            value,
+            unit: input.unit ?? unit,
+            status: input.status ?? (value === null ? "absent" : value === 0 ? "zero" : "ok")
+        };
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function defaultRenderFigure(figure) {
+        const normalized = normalizeFigure(figure);
+        const status = normalized.status;
+        const text = status === "absent" ? "no data" :
+            status === "failed" ? normalized.reason || "collection failed" :
+                String(normalized.value) + (normalized.unit ? " " + normalized.unit : "");
+        const description = normalized.reason || status;
+        return `<span class="cb-tu-figure" data-status="${escapeHtml(status)}" aria-description="${escapeHtml(description)}">${escapeHtml(text)}</span>`;
+    }
+
+    return {normalizeFigure, defaultRenderFigure};
+})();
+
+const {normalizeFigure, defaultRenderFigure} = figureHelpers;
+
 const defaultTheme = {
     mobile: {
         groups: [{border: "border-blue-400", color: "bg-blue-400"},
@@ -124,7 +164,8 @@ const defaultTheme = {
 }
 
 const defaultRenderOptions = {
-    assetRoot: "images"
+    assetRoot: "images",
+    renderFigure: defaultRenderFigure
 }
 
 const renderRootClass = classPrefixHelpers.renderRootClass;
@@ -164,7 +205,8 @@ function normalize_asset_root(root) {
 function with_render_options(options, render) {
     const previousOptions = activeRenderOptions;
     activeRenderOptions = {
-        assetRoot: normalize_asset_root(options && options.assetRoot)
+        assetRoot: normalize_asset_root(options && options.assetRoot),
+        renderFigure: options && typeof options.renderFigure === "function" ? options.renderFigure : defaultRenderFigure
     };
     try {
         return render();
@@ -183,6 +225,10 @@ function set_asset_root(root) {
 
 function get_asset_path(assetName) {
     return get_asset_root() + "/" + assetName;
+}
+
+function render_figure(input, unit) {
+    return activeRenderOptions.renderFigure(normalizeFigure(input, unit));
 }
 
 
@@ -214,19 +260,13 @@ function add_node_name(name) {
 }
 
 function create_resources(resources) {
-    let hidden = "hidden";
-    let memory = 1;
-    let cpus = 0.5;
-    let cfg = defaultTheme.resources.color + " " + defaultTheme.resources.textColor;
-    if (resources) {
-        memory = resources.memory
-        cpus = resources.cpus
-        hidden = "";
-    }
+    const values = resources || {};
+    const hidden = resources ? "" : "hidden";
+    const cfg = defaultTheme.resources.color + " " + defaultTheme.resources.textColor;
     return "                                        <div class=\"align-center " + hidden + " \">\n" +
         "                                            <div class=\" " + cfg + " rounded-lg text-xs font-bold mx-2 px-2 \">\n" +
-        "                                                <div>" + memory + " GB</div>" +
-        "                                                <div> " + cpus + " CPUs</div>" +
+        "                                                <div>" + render_figure(values.memory, "GB") + "</div>" +
+        "                                                <div> " + render_figure(values.cpus, "CPUs") + "</div>" +
         "                                            </div>\n" +
         "                                        </div>\n";
     /* return " <div class=\"-my-6 align-center " + hidden + "\">" +
@@ -275,11 +315,12 @@ function node_total(node) {
 }
 
 function create_node(node) {
+    const resources = node.resources;
     const total = node_total(node);
     const inner = "<div class=\"flex-row max-w-100 py-2 my-0 space-y-0\">" +
         add_node_name(node.name) +
-        add_node_image(node.resources, total) +
-        create_resources(node.resources) +
+        add_node_image(resources, total) +
+        create_resources(resources) +
         add_node_services(node.services) +
         "</div>";
     if (!total) {
@@ -379,13 +420,24 @@ function format_docs(docs, decimals) {
 }
 
 function format_number(size, base, sizes, decimals = 2) {
-    if (size === 0)
-        return '0 ' + sizes[0];
+    const figure = normalizeFigure(size);
+    if (figure.value === null || figure.status === "failed") {
+        return {...figure, unit: figure.unit ?? sizes[0]};
+    }
+
+    const numericSize = Number(figure.value);
+    if (!Number.isFinite(numericSize)) {
+        return {...figure, unit: figure.unit ?? sizes[0]};
+    }
+
+    if (numericSize === 0) {
+        return {...figure, value: 0, unit: sizes[0]};
+    }
 
     const dm = decimals < 0 ? 0 : decimals;
-    const i = Math.floor(Math.log(size) / Math.log(base));
+    const i = Math.floor(Math.log(numericSize) / Math.log(base));
 
-    return parseFloat((size / Math.pow(base, i)).toFixed(dm)) + ' ' + sizes[i];
+    return {...figure, value: parseFloat((numericSize / Math.pow(base, i)).toFixed(dm)), unit: sizes[i]};
 }
 
 function get_bucket_config(type) {
@@ -405,7 +457,7 @@ function create_grid_header() {
 }
 
 function create_collection(data, cfg = defaultTheme.cluster.buckets.default) {
-    let ndocs = data && data.documents ? format_docs(data.documents, 2) : "--";
+    let ndocs = render_figure(format_docs(data && data.documents, 2));
     let ttl = data.ttl ? "" + data.ttl : "";
     let connectors = data.connectors ? get_connectors(data.connectors) : "";
     return (data && data.name) ?
@@ -428,7 +480,7 @@ function create_collection(data, cfg = defaultTheme.cluster.buckets.default) {
 
 function create_grid_scope_body(data, cfg = defaultTheme.cluster.buckets.default) {
     let collections = "";
-    let ndocs = data.documents ? format_docs(data.documents, 2) : "--";
+    let ndocs = render_figure(format_docs(data.documents, 2));
     let marginBottom = "mb-1";
     let total = "";
     let scopeIcon = cfg.scopes.iconFold;
@@ -470,7 +522,8 @@ function create_grid_scopes(data, cfg = defaultTheme.cluster.buckets.default) {
 }
 
 function get_ratio_value(data) {
-    let ratio = data.ratio ? data.ratio : 0;
+    const figure = normalizeFigure(data && data.ratio, "%");
+    let ratio = Number(figure.value) || 0;
     let statusLevelColor;
     switch (Math.round(ratio / 10)) {
         case 0:
@@ -507,10 +560,10 @@ function get_ratio_value(data) {
             break;
     }
 
-    return (data.ratio ?
-        "        <span class=\"px-2 py-1 text-xs font-bold " + statusLevelColor + " rounded-xl shadow-400\">" + data.ratio + " %</span>\n" :
+    return (figure.status !== "absent" && figure.value !== null ?
+        "        <span class=\"px-2 py-1 text-xs font-bold " + statusLevelColor + " rounded-xl shadow-400\">" + render_figure(figure) + "</span>\n" :
         "        <div class=\"text-xs text-gray-900 font-bold text-center\">\n" +
-        "          --\n" +
+        "          " + render_figure(figure) + "\n" +
         "        </div>\n")
 }
 
@@ -545,7 +598,7 @@ function create_grid_body_row(data) {
     let type = data.type ? data.type : "default";
     let cfg = get_bucket_config(type);
     let others = [data.type === "total" ? "bg-gray-800" : "bg-gray-400", data.type === "total" ? "bg-gray-800" : "bg-amber-400", "bg-orange-400", "bg-yellow-800"];
-    let replicas = data.replicas ? data.replicas : "--";
+    let replicas = render_figure(data.replicas);
     let total = "";
     let scopes = "";
     let ttl = data.ttl ? "" + data.ttl : "0";
@@ -564,10 +617,10 @@ function create_grid_body_row(data) {
         "      </div>\n" +
         "    </div>" +
         "    <div class=\"grid grid-nowrap text-xs text-gray-900 break-normal\">\n" +
-        "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[0] + " rounded-xl shadow-400\">" + format_mb(data.quota) + "</span>\n" +
+        "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[0] + " rounded-xl shadow-400\">" + render_figure(format_mb(data.quota)) + "</span>\n" +
         "    </div>\n" +
         "    <div class=\"grid grid-nowrap text-xs text-gray-900\">\n" +
-        "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[1] + " rounded-xl shadow-400\">" + format_docs(data.documents) + "</span>\n" +
+        "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[1] + " rounded-xl shadow-400\">" + render_figure(format_docs(data.documents)) + "</span>\n" +
         "    </div>\n" +
         "    <div class=\"grid grid-nowrap text-xs text-gray-900\">\n" +
         get_ratio_value(data) +
@@ -878,13 +931,15 @@ const topologyUi = {
     create_cluster,
     createCluster: create_cluster,
     defaultTheme,
+    defaultRenderFigure,
     get_asset_root,
     getAssetRoot: get_asset_root,
     renderRootClass,
     render_cluster_html,
     renderClusterHtml: render_cluster_html,
     set_asset_root,
-    setAssetRoot: set_asset_root
+    setAssetRoot: set_asset_root,
+    normalizeFigure
 }
 
 if (typeof module !== "undefined" && module.exports) {

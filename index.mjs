@@ -11,9 +11,11 @@ if (typeof window !== "undefined") {
 export const {
   create_cluster,
   createCluster,
+  defaultRenderFigure,
   get_asset_root,
   getAssetRoot,
   mountTopology,
+  normalizeFigure,
   parseTopologySource,
   render_cluster_html,
   renderClusterHtml,

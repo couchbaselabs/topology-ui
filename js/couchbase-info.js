@@ -423,7 +423,7 @@ function format_docs(docs, decimals) {
 
 function format_number(size, base, sizes, decimals = 2) {
     const figure = normalizeFigure(size);
-    if (figure.value === null || figure.status === "failed") {
+    if (figure.value === null || figure.status === "failed" || figure.unit !== undefined) {
         return {...figure, unit: figure.unit ?? sizes[0]};
     }
 
@@ -664,7 +664,7 @@ function aggregate_figures(values) {
     const figures = values.map(value => normalizeFigure(value));
     const usable = figures
         .map(figure => ({figure, value: numeric_figure_value(figure)}))
-        .filter(({value}) => value !== null);
+        .filter(({figure, value}) => value !== null && !["failed", "absent"].includes(figure.status));
     const unit = figures.find(figure => figure.unit !== undefined)?.unit;
     const result = value => unit === undefined ? value : {...value, unit};
 

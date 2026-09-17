@@ -131,6 +131,41 @@ test("bucket summary aggregates object figures as partial quality figures", () =
   ]);
 });
 
+test("bucket figures preserve explicit units", () => {
+  const html = renderTopology({
+    buckets: [{
+      name: "bucket",
+      quota: { value: 7, unit: "GiB", status: "partial", reason: "one source missing" },
+      documents: { value: 2, unit: "M", status: "partial", reason: "one source missing" }
+    }]
+  });
+
+  assert.match(html, />~7 GiB<\/span>/);
+  assert.match(html, />~2 M<\/span>/);
+});
+
+test("bucket summary excludes failed numeric payloads", () => {
+  const figures = [];
+  renderTopology({
+    buckets: [
+      { name: "one", quota: { value: 1024, status: "ok" }, documents: 1000 },
+      { name: "two", quota: { value: 2048, status: "failed", reason: "collection failed" }, documents: 2000 }
+    ]
+  }, {
+    renderFigure(figure) {
+      figures.push(figure);
+      return "<b>X</b>";
+    }
+  });
+
+  assert.deepEqual(figures.filter((figure) => figure.unit === "GB").at(-1), {
+    value: 1,
+    unit: "GB",
+    status: "partial",
+    reason: "summary includes incomplete bucket data"
+  });
+});
+
 test("bucket summary keeps plain-number quota and document figures ok", () => {
   const figures = [];
   renderTopology({

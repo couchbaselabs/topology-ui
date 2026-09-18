@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>topology-ui preview</title>
+    <link href="../dist/topology-ui.css" rel="stylesheet"/>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background: #fff; }
+        h2 { font-size: 15px; margin: 24px 0 4px; color: #333; }
+        p.note { font-size: 12px; color: #666; margin: 0 0 8px; }
+    </style>
+</head>
+<body>
+<h2>1. Sync Gateway plus cluster, real Finance Stack snapshot da591ff1e62f40f0386d43120f1d8c05::5</h2>
+<p class="note">Mobile addresses shorten. Buckets carry eviction. No connectors and no TTL, so those two columns are gone.</p>
+<div id="finance"></div>
+
+<h2>2. Library demo data</h2>
+<p class="note">Connectors and TTL are present here, so both columns stay. Eviction is absent, so that column is hidden.</p>
+<div id="demo"></div>
+
+<h2>3. Scopes and collections with every column hidden but quota and #docs</h2>
+<p class="note">Scope and collection rows follow the visible columns instead of a fixed eight-column grid.</p>
+<div id="scopes"></div>
+
+<script type="module">
+  import topologyUi from "../index.mjs";
+
+  // The browser bundle exposes create_cluster; assets sit one directory up.
+  const mount = (id, data) =>
+    topologyUi.create_cluster(document.getElementById(id), data, { assetRoot: "../images" });
+
+  const node = (name, cpus, memory, services) => ({ name, resources: { memory, cpus }, services, status: "HEALTHY" });
+
+  mount("finance", {
+    name: "da591ff1e62f40f0386d43120f1d8c05",
+    version: "7.6.8-7151",
+    nodesPerLine: 3,
+    serverGroups: [
+      {
+        name: "group:1",
+        status: "HEALTHY",
+        nodes: [
+          node("svc-dqis-node-001.29fep4zxmeuizhpc.cloud.couchbase.com", 4, 31, ["data"]),
+          node("svc-dqis-node-002.29fep4zxmeuizhpc.cloud.couchbase.com", 8, 31, ["eventing", "index", "query"]),
+          node("svc-dqis-node-003.29fep4zxmeuizhpc.cloud.couchbase.com", 8, 31, ["eventing", "index", "query"])
+        ]
+      },
+      {
+        name: "group:3",
+        status: "HEALTHY",
+        nodes: [
+          node("svc-dqis-node-004.29fep4zxmeuizhpc.cloud.couchbase.com", 4, 31, ["data"]),
+          node("svc-dqis-node-005.29fep4zxmeuizhpc.cloud.couchbase.com", 8, 31, ["eventing", "index", "query"])
+        ]
+      },
+      {
+        name: "group:2",
+        status: "HEALTHY",
+        nodes: [
+          node("svc-dqis-node-006.29fep4zxmeuizhpc.cloud.couchbase.com", 4, 31, ["data"]),
+          node("svc-dqis-node-007.29fep4zxmeuizhpc.cloud.couchbase.com", 8, 31, ["eventing", "index", "query"])
+        ]
+      }
+    ],
+    buckets: [
+      { name: "capellasyncgw", type: "couchbase", quota: 6144, documents: 7930000, ratio: 38.8, replicas: 1, eviction: "value_only" },
+      { name: "financestack", type: "couchbase", quota: 3072, documents: 1470000, ratio: 100, replicas: 1, eviction: "value_only" },
+      { name: "moneybase", type: "magma", quota: 8048, documents: 4600000, ratio: 41, replicas: 1, eviction: "full_eviction" },
+      { name: "moneybase-cache", type: "ephemeral", quota: 3072, documents: 104730, ratio: 100, replicas: 1, eviction: "no_eviction" }
+    ],
+    mobile: {
+      version: "3.3.5.1-1",
+      groups: [
+        {
+          name: "Sync Gateway",
+          instances: [
+            { nodeIp: "app-svcs-023.29fep4zxmeuizhpc.cloud.couchbase.com", name: "app-svcs-023" },
+            { nodeIp: "app-svcs-025.29fep4zxmeuizhpc.cloud.couchbase.com", name: "app-svcs-025" }
+          ]
+        }
+      ],
+      databases: [{ name: "capellasyncgw", bucket: "capellasyncgw" }]
+    },
+    status: "HEALTHY"
+  });
+
+  mount("demo", {
+    name: "cb-demo",
+    version: "6.6.3",
+    resources: { memory: "128", cpus: "8" },
+    nodesPerLine: 3,
+    serverGroups: [
+      {
+        name: "serverGroup1",
+        status: "HEALTHY",
+        nodes: [
+          node("cb-demo0000", "16", "256", ["Query", "Index"]),
+          node("cb-demo0001", "16", "256", ["Data", "Query", "Index", "Analytics"]),
+          node("cb-demo0002", "16", "256", ["Data", "Query", "Index", "Analytics"])
+        ]
+      }
+    ],
+    buckets: [
+      { name: "mybucket", type: "couchbase", quota: 5590, documents: 39000000, replicas: 1, ratio: 49, ttl: 3600, connectors: ["mobile", "kafka", "elastic", "spark"] },
+      { name: "mybucket2", type: "ephemeral", quota: 5590, documents: 39000000, replicas: 1, ratio: 32, ttl: 0, connectors: ["mobile", "kafka"] }
+    ],
+    status: "HEALTHY"
+  });
+
+  mount("scopes", {
+    name: "scoped",
+    version: "8.0.0",
+    buckets: [
+      {
+        name: "travel-sample",
+        type: "couchbase",
+        quota: 2048,
+        documents: 63000,
+        scopes: [
+          { name: "inventory", documents: 41000, collections: [{ name: "airline", documents: 1200 }, { name: "hotel", documents: 39800 }] },
+          { name: "tenant_agent_00", documents: 22000 }
+        ]
+      }
+    ],
+    status: "HEALTHY"
+  });
+</script>
+</body>
+</html>

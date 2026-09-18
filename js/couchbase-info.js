@@ -255,9 +255,24 @@ function normalize(name, maxLength) {
     return name
 }
 
+/**
+ * The part of a host that identifies it.
+ *
+ * An IPv4 address distinguishes itself at the end, so it stays whole and `normalize`
+ * keeps its tail. A fully qualified name distinguishes itself in the first label, and
+ * its shared domain suffix only pushes that label out of view, so the suffix goes.
+ */
+function host_label(host) {
+    if (typeof host !== "string" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+        return host;
+    }
+    const label = host.split(".")[0];
+    return label || host;
+}
+
 function add_node_name(name) {
     let hidden = name ? "" : "hidden";
-    const displayName = normalize(name, 9);
+    const displayName = normalize(host_label(name), 9);
     return "   <div class=\"flex-row text-xs text-gray-400 font-bold mb-1 " + hidden + " \">" + displayName + "</div>"
 }
 
@@ -446,49 +461,137 @@ function get_bucket_config(type) {
     return defaultTheme.cluster.buckets[type] ? defaultTheme.cluster.buckets[type] : defaultTheme.cluster.buckets.default;
 }
 
-function create_grid_header() {
-    return "<div class=\"grid grid-cols-8 border-b-2 border-orange-400 text-xs text-gray-500 text-center font-bold p-1 mb-1 grid-nowrap\"> \n " +
+/**
+ * The bucket grid columns, in render order. The bucket name always occupies the first
+ * two columns. A column renders only when at least one bucket carries a value for it,
+ * so a topology without connectors, TTL or eviction does not show three empty columns.
+ */
+const bucketGridColumns = [
+    {key: "quota", label: "Quota"},
+    {key: "documents", label: "#docs"},
+    {key: "ratio", label: "%Resident"},
+    {key: "replicas", label: "Replicas"},
+    {key: "eviction", label: "Eviction"},
+    {key: "connectors", label: "Connectors"},
+    {key: "ttl", label: "TTL"}
+];
+
+const NAME_COLUMN_SPAN = 2;
+
+// Tailwind reads these literals, so the built stylesheet carries every width the grid uses.
+const gridColumnsClass = {
+    3: "grid-cols-3",
+    4: "grid-cols-4",
+    5: "grid-cols-5",
+    6: "grid-cols-6",
+    7: "grid-cols-7",
+    8: "grid-cols-8",
+    9: "grid-cols-9"
+};
+
+const gridColumnSpanClass = {
+    3: "col-span-3",
+    4: "col-span-4",
+    5: "col-span-5",
+    6: "col-span-6",
+    7: "col-span-7",
+    8: "col-span-8",
+    9: "col-span-9"
+};
+
+const gridColumnStartClass = {
+    3: "col-start-3",
+    4: "col-start-4",
+    5: "col-start-5",
+    6: "col-start-6",
+    7: "col-start-7",
+    8: "col-start-8",
+    9: "col-start-9"
+};
+
+/**
+ * Whether a bucket carries this column at all.
+ *
+ * A figure whose value is null still counts. A measured value that the source did not
+ * answer is information, and the renderer keeps showing it as missing. A key the caller
+ * never set is not information, and its column disappears.
+ */
+function has_column(bucket, key) {
+    const value = bucket ? bucket[key] : undefined;
+    if (value === null || value === undefined) {
+        return false;
+    }
+    if (Array.isArray(value)) {
+        return value.length > 0;
+    }
+    if (typeof value === "string") {
+        return value.trim() !== "";
+    }
+    return true;
+}
+
+function visible_bucket_columns(buckets) {
+    const rows = Array.isArray(buckets) ? buckets : [];
+    return bucketGridColumns.filter(column => rows.some(bucket => has_column(bucket, column.key)));
+}
+
+function grid_width(columns) {
+    return NAME_COLUMN_SPAN + columns.length;
+}
+
+function grid_class(columns) {
+    return gridColumnsClass[grid_width(columns)] || "grid-cols-8";
+}
+
+/** The 1-based grid column a bucket column renders in, or 0 when it is hidden. */
+function column_position(columns, key) {
+    const index = columns.findIndex(column => column.key === key);
+    return index === -1 ? 0 : NAME_COLUMN_SPAN + index + 1;
+}
+
+function create_grid_header(columns) {
+    const headings = columns
+        .map(column => "   <div><span>" + column.label + "</span></div> \n ")
+        .join("");
+    return "<div class=\"grid " + grid_class(columns) + " border-b-2 border-orange-400 text-xs text-gray-500 text-center font-bold p-1 mb-1 grid-nowrap\"> \n " +
         "   <div class='col-span-2'><span>Buckets</span></div> \n " +
-        "   <div><span>Quota</span></div> \n " +
-        "   <div><span>#docs</span></div> \n " +
-        "   <div><span>%Resident</span></div> \n " +
-        "   <div><span>Replicas</span></div> \n " +
-        "   <div><span>Connectors</span></div> \n " +
-        "   <div><span>TTL</span></div> \n " +
+        headings +
         "</div> \n ";
 }
 
-function create_collection(data, cfg = defaultTheme.cluster.buckets.default) {
-    let ndocs = render_figure(format_docs(data && data.documents, 2));
-    let ttl = data.ttl ? "" + data.ttl : "";
-    let connectors = data.connectors ? get_connectors(data.connectors) : "";
+function create_collection(data, cfg = defaultTheme.cluster.buckets.default, columns = bucketGridColumns) {
+    const ndocs = render_figure(format_docs(data && data.documents, 2));
+    const ttl = data.ttl ? "" + data.ttl : "";
+    const connectors = data.connectors ? get_connectors(data.connectors) : "";
+    const cell = (key, content, classes) => {
+        const position = column_position(columns, key);
+        return position === 0 ? "" :
+            "   <div class=\"grid " + gridColumnStartClass[position] + " grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center " + classes + "\">" +
+            content +
+            "   </div>";
+    };
     return (data && data.name) ?
         "   <div class=\"grid col-start-1 col-span-2 grid-nowrap mb-1 content-center justify-self-stretch justify-items-start px-2 text-xs text-white font-bold " + cfg.collections.color + " rounded-xl shadow-400\">" +
         "      <div class=\"flex flex-row flex-nowrap justify-self-stretch items-center\">" +
         "        " + create_fontawesome_label("pl-1 " + cfg.collections.icon, data.name + "   ") +
         "      </div>\n" +
         "   </div>" +
-        "   <div class=\"grid col-start-4 grid-nowrap content-center justify-items-center px-2 text-center text-xs text-gray-300 \">" +
-        "       <span> " + ndocs + "</span>" +
-        "   </div>" +
-        "   <div class=\"grid col-start-7 grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center text-xs text-gray-400 font-bold\">" +
-        connectors +
-        "   </div>" +
-        "   <div class=\"grid col-start-8 grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center text-xs text-gray-400 font-bold\">" +
-        "       <span> " + ttl + "</span>" +
-        "   </div>"
+        cell("documents", "<span> " + ndocs + "</span>", "text-xs text-gray-300") +
+        cell("connectors", connectors, "text-xs text-gray-400 font-bold") +
+        cell("ttl", "<span> " + ttl + "</span>", "text-xs text-gray-400 font-bold")
         : "";
 }
 
-function create_grid_scope_body(data, cfg = defaultTheme.cluster.buckets.default) {
+function create_grid_scope_body(data, cfg = defaultTheme.cluster.buckets.default, columns = bucketGridColumns) {
     let collections = "";
-    let ndocs = render_figure(format_docs(data.documents, 2));
+    const ndocs = render_figure(format_docs(data.documents, 2));
     let marginBottom = "mb-1";
     let total = "";
     let scopeIcon = cfg.scopes.iconFold;
+    const documentsPosition = column_position(columns, "documents");
     if (data.collections && data.collections.length > 0) {
-        collections = "<div class=\"grid grid-cols-8 text-xs text-gray-200 text-center font-bold p-1 ml-1\">";
-        data.collections.forEach(c => collections += create_collection(c, cfg));
+        collections = "<div class=\"grid " + grid_class(columns) + " text-xs text-gray-200 text-center font-bold p-1 ml-1\">";
+        data.collections.forEach(c => collections += create_collection(c, cfg, columns));
         collections += "</div>";
         marginBottom = "";
         scopeIcon = cfg.scopes.iconExtend;
@@ -496,27 +599,28 @@ function create_grid_scope_body(data, cfg = defaultTheme.cluster.buckets.default
         total = "<span class=\" px-1 bg-white rounded-full text-blue-400 \">" + data.collections.length + " </span>";
     }
 
-    return "<div class='grid grid-cols-8 " + cfg.scopes.color + " rounded-md shadow-xs ml-1 " + marginBottom + "'>" +
+    return "<div class='grid " + grid_class(columns) + " " + cfg.scopes.color + " rounded-md shadow-xs ml-1 " + marginBottom + "'>" +
         "   <div class=\"grid col-start-1 col-span-2 grid-nowrap content-center justify-self-stretch justify-items-start px-2 text-xs text-white font-bold \">" +
         "        " + create_fontawesome_label("pl-1 " + scopeIcon, data.name + "   ") +
         "   </div>" +
-        "   <div class=\"grid col-start-4 grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center text-xs text-gray-400 font-bold\">" +
-        "       <span> " + ndocs + "</span>" +
-        "   </div>" +
+        (documentsPosition === 0 ? "" :
+            "   <div class=\"grid " + gridColumnStartClass[documentsPosition] + " grid-nowrap content-center justify-self-stretch justify-items-center px-2 text-center text-xs text-gray-400 font-bold\">" +
+            "       <span> " + ndocs + "</span>" +
+            "   </div>") +
         "</div>"
         + collections;
 }
 
-function create_grid_scope(data, cfg = defaultTheme.cluster.buckets.default) {
-    return data ? create_grid_scope_body(data, cfg) : "";
+function create_grid_scope(data, cfg = defaultTheme.cluster.buckets.default, columns = bucketGridColumns) {
+    return data ? create_grid_scope_body(data, cfg, columns) : "";
 }
 
-function create_grid_scopes(data, cfg = defaultTheme.cluster.buckets.default) {
+function create_grid_scopes(data, cfg = defaultTheme.cluster.buckets.default, columns = bucketGridColumns) {
     let scopes = "";
     if (data && data.length > 0) {
-        scopes = "<div class = \"grid grid-cols-8 \"> " +
-            "   <div class='grid col-span-8'>";
-        data.forEach(scope => scopes += create_grid_scope(scope, cfg) + "\n ")
+        scopes = "<div class = \"grid " + grid_class(columns) + " \"> " +
+            "   <div class='" + (gridColumnSpanClass[grid_width(columns)] || "col-span-8") + "'>";
+        data.forEach(scope => scopes += create_grid_scope(scope, cfg, columns) + "\n ")
         scopes += "    </div> " +
             "</div>";
     }
@@ -596,58 +700,77 @@ function get_connectors(data) {
     return connectors;
 }
 
-function create_grid_body_row(data) {
+/** Couchbase reports eviction with a suffix every row repeats. The cell shows the choice. */
+const evictionLabels = {
+    value_only: "value",
+    full_eviction: "full"
+};
+
+function eviction_figure(value) {
+    const figure = normalizeFigure(value);
+    const label = evictionLabels[figure.value];
+    return label === undefined ? figure : {...figure, value: label};
+}
+
+function bucket_cell(data, column, isTotal, others) {
+    if (column.key === "quota") {
+        return "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[0] + " rounded-xl shadow-400\">" + render_figure(format_mb(data.quota)) + "</span>\n";
+    }
+    if (column.key === "documents") {
+        return "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[1] + " rounded-xl shadow-400\">" + render_figure(format_docs(data.documents)) + "</span>\n";
+    }
+    if (column.key === "ratio") {
+        return isTotal ? "" : get_ratio_value(data);
+    }
+    if (column.key === "replicas") {
+        return isTotal ? "" : render_figure(data.replicas);
+    }
+    if (column.key === "eviction") {
+        return isTotal || !has_column(data, "eviction") ? "" : render_figure(eviction_figure(data.eviction));
+    }
+    if (column.key === "connectors") {
+        return "         " + get_connectors(data.connectors) + "\n";
+    }
+    return "         " + (has_column(data, "ttl") ? "" + normalizeFigure(data.ttl).value : "") + "\n";
+}
+
+function create_grid_body_row(data, columns) {
     let type = data.type ? data.type : "default";
     const isTotal = data.type === "total";
     let cfg = get_bucket_config(type);
     let others = [isTotal ? "bg-gray-800" : "bg-gray-400", isTotal ? "bg-gray-800" : "bg-amber-400", "bg-orange-400", "bg-yellow-800"];
-    let replicas = isTotal ? "" : render_figure(data.replicas);
     let total = "";
     let scopes = "";
-    let ttl = isTotal ? "" : data.ttl ? "" + data.ttl : "0";
-    let connectors = get_connectors(data.connectors);
 
     if (data.scopes) {
         total = "<div class=\" px-2 bg-white rounded-full text-blue-400 \">" + data.scopes.length + " </div>";
-        // Adding number of buckets =>  data.total ? "<span class=\"px-2 bg-white rounded-full text-blue-400\">"+data.total+" </span>": "");
-        scopes = create_grid_scopes(data.scopes, cfg);
+        scopes = create_grid_scopes(data.scopes, cfg, columns);
     }
 
-    return "<div class=\"grid grid-cols-8 gap-0 text-xs text-gray-500 text-center font-bold pb-1 break-normal justify-items-center\"> \n " +
+    const cells = columns
+        .map(column => "    <div class=\"grid grid-nowrap text-xs text-gray-900 break-normal font-bold\">\n" +
+            bucket_cell(data, column, isTotal, others) +
+            "    </div>\n")
+        .join("");
+
+    return "<div class=\"grid " + grid_class(columns) + " gap-0 text-xs text-gray-500 text-center font-bold pb-1 break-normal justify-items-center\"> \n " +
         "    <div class=\"col-span-2 grid grid-nowrap content-center justify-self-stretch justify-items-start px-2 text-xs text-white font-bold " + cfg.color + " rounded-xl shadow-400\">" +
         "      <div class=\"flex flex-row flex-nowrap justify-self-stretch items-center\">" +
         "        " + create_fontawesome_label(cfg.icon + " pl-1", data.name + "   ") + total +
         "      </div>\n" +
         "    </div>" +
-        "    <div class=\"grid grid-nowrap text-xs text-gray-900 break-normal\">\n" +
-        "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[0] + " rounded-xl shadow-400\">" + render_figure(format_mb(data.quota)) + "</span>\n" +
-        "    </div>\n" +
-        "    <div class=\"grid grid-nowrap text-xs text-gray-900\">\n" +
-        "        <span class=\"px-2 py-1 text-xs text-white font-bold " + others[1] + " rounded-xl shadow-400\">" + render_figure(format_docs(data.documents)) + "</span>\n" +
-        "    </div>\n" +
-        "    <div class=\"grid grid-nowrap text-xs text-gray-900\">\n" +
-        (isTotal ? "" : get_ratio_value(data)) +
-        "    </div>\n" +
-        "    <div class=\"grid grid-nowrap  text-xs text-gray-900 font-bold\">\n" +
-        replicas +
-        "    </div>\n" +
-        "    <div class=\"grid grid-nowrap  text-xs text-gray-900 font-bold text-center\">\n" +
-        "         " + connectors + "\n" +
-        "    </div>\n" +
-        "    <div class=\"grid grid-nowrap text-xs text-gray-900 font-bold text-center\">\n" +
-        "         " + ttl + "\n" +
-        "    </div>\n" +
+        cells +
         "</div> \n "
         + scopes
         ;
 }
 
-function create_grid_body(data) {
+function create_grid_body(data, columns) {
     if (!has_items(data)) {
         return "";
     }
     let body = "";
-    data.forEach(b => body += create_grid_body_row(b));
+    data.forEach(b => body += create_grid_body_row(b, columns));
     return body;
 }
 
@@ -685,7 +808,7 @@ function aggregate_figures(values) {
     return result({value, status: value === 0 ? "zero" : "ok"});
 }
 
-function create_grid_summary(data) {
+function create_grid_summary(data, columns) {
     let body = "";
     if (data && data.length > 1) {
         body = "<div class=\"border-t border-gray-200 bg-gray-100 \">"
@@ -696,18 +819,19 @@ function create_grid_summary(data) {
             type: "total",
             total: data.length
         };
-        body += create_grid_body_row(bucket);
+        body += create_grid_body_row(bucket, columns);
         body += "</div>";
     }
     return body;
 }
 
 function create_buckets_grid_table(data) {
+    const columns = visible_bucket_columns(data);
     return has_items(data) ?
         "<div class=\"grid grid-cols-1 shadow-sm m-4 \">" +
-        create_grid_header() +
-        create_grid_body(data) +
-        create_grid_summary(data) +
+        create_grid_header(columns) +
+        create_grid_body(data, columns) +
+        create_grid_summary(data, columns) +
         "</div>"
         : "";
 }
@@ -762,7 +886,7 @@ function create_svg(src, height = 50, width = 90, total = 0) {
 
 function create_instance(data, svg, total) {
     const inner = "                          <div class=\"flex-row max-w-100 py-2 my-0\">\n" +
-        "                                    <div class=\"flex-row text-xs text-gray-400 font-bold mb-1\">" + data.nodeIp + "</div>\n" +
+        "                                    <div class=\"flex-row text-xs text-gray-400 font-bold mb-1\">" + normalize(host_label(data.nodeIp), 9) + "</div>\n" +
         svg +
         create_resources(data.resources) +
         "                                    <div class=\"flex-row\">\n" +

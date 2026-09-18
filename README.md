@@ -409,6 +409,26 @@ By default all nodes inside a server group render on a single line and wrap only
 
 Example: 9 nodes with `nodesPerLine: 3` → 3 rows of 3. With `nodesPerLine: 2` → 4 rows of 2 plus a final row of 1. Omit the field (or set `0` / a non-integer) to keep the original wrap behavior.
 
+#### Bucket columns
+
+The bucket grid renders `quota`, `documents`, `ratio`, `replicas`, `eviction`, `connectors` and `ttl`, in that order, after the bucket name.
+
+A column renders only when at least one bucket carries that field. A topology whose buckets declare no `connectors` and no `ttl` shows neither column, and the grid narrows to fit. A field that is present but whose figure value is `null` keeps its column: a measured value the source did not answer stays visible as missing, while a field the caller never set is not modelled at all.
+
+`eviction` is a string field. The cell drops the suffix every row repeats, so `value_only` renders as `value` and `full_eviction` renders as `full`. Any other value renders as reported. Like every other cell it goes through the figure contract, so it accepts a plain string or a figure with quality.
+
+```
+buckets: [
+    { name: "mybucket", quota: 5590, documents: 39000000, replicas: 1, ratio: 49, eviction: "value_only" }
+]
+```
+
+Scope and collection rows follow the same visible columns, so their document counts stay under `#docs` whatever the grid width.
+
+#### Host names
+
+Node names and mobile instance addresses are shortened to fit their tile. A fully qualified name loses its domain suffix first, because every node in a cluster shares it, then the remaining label is middle-elided: `svc-dqis-node-001.29fep4zxmeuizhpc.cloud.couchbase.com` renders as `sv ... -001`. An IPv4 address keeps its shape and is elided from the middle: `10.156.192.8` renders as `10 ... 92.8`.
+
 #### Grouping identical nodes with `total`
 
 When a Server Group or Sync Gateway Group contains many identical nodes, listing them one by one makes the diagram tall and noisy. Set the `total` property on a node (or Sync Gateway instance) to render a single visual that represents `total` identical nodes. The renderer draws the node once with a small stacked-card effect behind it and a black `Nx` label on the left.

@@ -388,3 +388,109 @@ test("hostile host fixture selectors do not target renderer utility classes or t
   assertNoHostCollisionUtilityTokens(html);
   assert.doesNotMatch(html, /<table/i);
 });
+
+test("mobile instance names shorten like cluster node names", () => {
+  const long = "app-svcs-023.29fep4zxmeuizhpc.cloud.couchbase.com";
+  const html = renderTopology({
+    mobile: {
+      groups: [{ name: "Group 1", instances: [{ nodeIp: long, name: "app-svcs-023" }] }]
+    }
+  });
+
+  assert.doesNotMatch(html, new RegExp(long.replace(/\./g, "\\.")));
+  // The shared domain suffix goes, then the same middle ellipsis the cluster nodes use.
+  assert.match(html, /ap \.\.\. -023/);
+  assert.match(html, /app-svcs-023/);
+});
+
+test("cluster node names drop a shared domain suffix too", () => {
+  const html = renderTopology({
+    serverGroups: [
+      {
+        name: "group:1",
+        nodes: [{ name: "svc-dqis-node-001.29fep4zxmeuizhpc.cloud.couchbase.com", services: ["data"] }]
+      }
+    ]
+  });
+
+  assert.match(html, /sv \.\.\. -001/);
+  assert.doesNotMatch(html, /cloud\.couchbase\.com/);
+});
+
+test("mobile instance keeps a short address whole", () => {
+  const html = renderTopology({
+    mobile: { groups: [{ name: "Group 1", instances: [{ nodeIp: "10.0.0.10", name: "SG 1" }] }] }
+  });
+
+  assert.match(html, /10\.0\.0\.10/);
+});
+
+test("bucket grid renders an eviction column when a bucket reports one", () => {
+  const html = renderTopology({
+    buckets: [{ name: "one", quota: 1024, documents: 1000, ratio: 75, replicas: 1, eviction: "value_only" }]
+  });
+
+  assert.match(html, /<span>Eviction<\/span>/);
+  assert.match(html, />value</);
+  assert.doesNotMatch(html, /value_only/);
+});
+
+test("eviction labels drop the repeated suffix", () => {
+  const html = renderTopology({
+    buckets: [
+      { name: "one", quota: 1024, eviction: "value_only" },
+      { name: "two", quota: 1024, eviction: "full_eviction" },
+      { name: "three", quota: 1024, eviction: "no_eviction" }
+    ]
+  });
+
+  assert.match(html, />value</);
+  assert.match(html, />full</);
+  // Anything the map does not name renders as reported.
+  assert.match(html, />no_eviction</);
+});
+
+test("bucket grid hides the columns no bucket carries", () => {
+  const html = renderTopology({
+    buckets: [{ name: "one", quota: 1024, documents: 1000, ratio: 75, replicas: 1 }]
+  });
+
+  assert.doesNotMatch(html, /<span>Connectors<\/span>/);
+  assert.doesNotMatch(html, /<span>TTL<\/span>/);
+  assert.doesNotMatch(html, /<span>Eviction<\/span>/);
+  assert.match(html, /<span>Quota<\/span>/);
+  // Two name columns plus quota, documents, ratio and replicas.
+  assert.match(html, /cb-tu-grid-cols-6/);
+});
+
+test("bucket grid keeps a column whose figures are all absent", () => {
+  const html = renderTopology({
+    buckets: [
+      { name: "one", quota: { value: null, status: "absent" }, documents: 1000, ttl: 3600 },
+      { name: "two", quota: { value: null, status: "absent" }, documents: 2000, ttl: 7200 }
+    ]
+  });
+
+  assert.match(html, /<span>Quota<\/span>/);
+  assert.match(html, /<span>TTL<\/span>/);
+});
+
+test("scopes and collections follow the visible bucket columns", () => {
+  const html = renderTopology({
+    buckets: [
+      {
+        name: "one",
+        quota: 1024,
+        documents: 1000,
+        ratio: 75,
+        replicas: 1,
+        scopes: [{ name: "scope1", documents: 500, collections: [{ name: "collection1", documents: 500 }] }]
+      }
+    ]
+  });
+
+  // #docs is the fourth column while Connectors and TTL are hidden.
+  assert.match(html, /cb-tu-col-start-4/);
+  assert.doesNotMatch(html, /cb-tu-col-start-7/);
+  assert.doesNotMatch(html, /cb-tu-col-start-8/);
+});

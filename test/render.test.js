@@ -397,7 +397,7 @@ test("mobile instance names shorten like cluster node names", () => {
     }
   });
 
-  assert.doesNotMatch(html, new RegExp(long.replace(/\./g, "\\.")));
+  assert.ok(!html.includes(long));
   // The shared domain suffix goes, then the same middle ellipsis the cluster nodes use.
   assert.match(html, /ap \.\.\. -023/);
   assert.match(html, /app-svcs-023/);
@@ -414,7 +414,7 @@ test("cluster node names drop a shared domain suffix too", () => {
   });
 
   assert.match(html, /sv \.\.\. -001/);
-  assert.doesNotMatch(html, /cloud\.couchbase\.com/);
+  assert.ok(!html.includes("cloud.couchbase.com"));
 });
 
 test("mobile instance keeps a short address whole", () => {
